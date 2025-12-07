@@ -21,164 +21,174 @@
                 <img src="antoni-profile.png" alt="Antoni" class="profile-picture">
                 <h1>Antonis Grammatik-Abenteuer</h1>
             </div>
-            <span class="header-logo-icon">📚</span> <!-- Logo moved to right -->
+            <span class="header-logo-icon">📚</span>
         </div>
         <p class="subtitle">Übe Grammatik und sammle Punkte, Antoni! 🎯</p>
-    </div>
-    <div class="header-right">
-        <div class="status-pill">
-            <div class="level-badge">
-                <span id="level-icon">🌱</span>
-                <span id="level-name">Anfänger</span>
-            </div>
-            <div class="status-separator"></div>
-            <div class="total-points">
-                <span class="star-icon" style="font-size: 1.2rem;">⭐</span>
-                <span id="total-points" class="points-value" style="font-size: 1.2rem;">0</span>
-            </div>
-        </div>
-    </div>
-    </div>
-    </div>
 
-    <!-- Achievements Display (Hidden until unlocked) -->
-    <div id="achievements-container" class="achievements-card" style="display: none;">
-        <h3 class="achievements-title">🎉 Deine Erfolge:</h3>
-        <div id="achievements-list" class="achievements-list"></div>
-    </div>
-
-    <!-- Level Selection Screen -->
-    <div id="level-screen" class="screen active">
-        <div class="level-selection-container">
-            <h2 class="level-title">🚀 Wähle dein Level!</h2>
-            <p class="level-subtitle">Welche Klasse besuchst du?</p>
-
-            <div class="level-buttons">
-                <button class="level-btn beginner" onclick="selectLevel('beginner')">
-                    <div class="level-icon">🌱</div>
-                    <h3>Anfänger</h3>
-                    <p class="level-class">Klasse 2</p>
-                    <p class="level-description">Grundlagen der Grammatik</p>
-                </button>
-
-                <button class="level-btn intermediate" onclick="selectLevel('intermediate')">
-                    <div class="level-icon">⭐</div>
-                    <h3>Fortgeschritten</h3>
-                    <p class="level-class">Klasse 3</p>
-                    <p class="level-description">Vertiefung & Zeitformen</p>
-                </button>
-
-                <button class="level-btn advanced" onclick="selectLevel('advanced')">
-                    <div class="level-icon">🏆</div>
-                    <h3>Experte</h3>
-                    <p class="level-class">Klasse 4</p>
-                    <p class="level-description">Komplexe Grammatik</p>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Category Selection Screen -->
-    <div id="category-screen" class="screen" style="display: none;">
-
-        <div class="categories-grid">
-            <button class="category-card category-nomen" data-category="nomen">
-                <div class="category-emoji">🏠</div>
-                <h3 class="category-title">Nomen</h3>
-                <p class="category-subtitle">(Namenwörter)</p>
-                <p class="category-count">50 Fragen</p>
-            </button>
-
-            <button class="category-card category-verben" data-category="verben">
-                <div class="category-emoji">🏃</div>
-                <h3 class="category-title">Verben</h3>
-                <p class="category-subtitle">(Tunwörter)</p>
-                <p class="category-count">50 Fragen</p>
-            </button>
-
-            <button class="category-card category-adjektive" data-category="adjektive">
-                <div class="category-emoji">🎨</div>
-                <h3 class="category-title">Adjektive</h3>
-                <p class="category-subtitle">(Wiewörter)</p>
-                <p class="category-count">50 Fragen</p>
-            </button>
-
-            <button class="category-card category-saetze" data-category="saetze">
-                <div class="category-emoji">📝</div>
-                <h3 class="category-title">Sätze</h3>
-                <p class="category-subtitle">(Satzbau)</p>
-                <p class="category-count">50 Fragen</p>
-            </button>
-
-            <button class="category-card category-pronomen" data-category="pronomen">
-                <div class="category-emoji">👥</div>
-                <h3 class="category-title">Pronomen</h3>
-                <p class="category-subtitle">(Fürwörter)</p>
-                <p class="category-count">50 Fragen</p>
-            </button>
-
-            <button class="category-card category-wortarten" data-category="wortarten">
-                <div class="category-emoji">🧩</div>
-                <h3 class="category-title">Wortarten</h3>
-                <p class="category-subtitle">(Grammatik-Mix)</p>
-                <p class="category-count">50 Fragen</p>
-            </button>
-        </div>
-
-        <!-- Statistics Section -->
-        <div class="statistics-section">
-            <h3 class="statistics-title">📊 Deine Statistik</h3>
-            <div class="statistics-row">
-                <div class="stat-item stat-blue">
-                    <div id="correct-answers" class="stat-value">0</div>
-                    <div class="stat-label">Richtige Antworten</div>
+        <!-- Stats moved here -->
+        <div class="header-right" style="margin-bottom: 2rem;">
+            <div class="status-pill">
+                <div class="level-badge">
+                    <span id="level-icon">🌱</span>
+                    <span id="level-name">Anfänger</span>
                 </div>
-                <div class="stat-item stat-purple">
-                    <div id="total-points-stat" class="stat-value">0</div>
-                    <div class="stat-label">Gesamtpunkte</div>
-                </div>
-                <div class="stat-item stat-green">
-                    <div id="achievements-count" class="stat-value">0</div>
-                    <div class="stat-label">Erfolge</div>
-                </div>
-            </div>
-
-            <!-- Streak Display -->
-            <div id="streak-container" class="streak-card" style="display: none; margin-bottom: 0;">
-                <div class="streak-content">
-                    <span class="streak-icon">⚡</span>
-                    <span id="streak-text" class="streak-text">0x Serie! +0 Bonuspunkte</span>
-                    <span class="streak-icon">⚡</span>
+                <div class="status-separator"></div>
+                <div class="total-points">
+                    <span class="star-icon" style="font-size: 1.2rem;">⭐</span>
+                    <span id="total-points" class="points-value" style="font-size: 1.2rem;">0</span>
                 </div>
             </div>
         </div>
 
-        <!-- Settings Section -->
-        <div class="settings-section">
-            <h3 class="settings-title">⚙️ Einstellungen</h3>
-            <div class="settings-grid">
-                <!-- Sound Toggle (Moved here) -->
-                <div class="sound-toggle-card-settings"
-                    style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--color-gray-200); padding: var(--spacing-md); border-radius: var(--radius-lg);">
-                    <span class="sound-label">🔊 Sound-Effekte</span>
-                    <button id="sound-toggle" class="toggle-button active">
-                        <span class="toggle-text">An</span>
+        <!-- Achievements Display (Hidden until unlocked) -->
+        <div id="achievements-container" class="achievements-card" style="display: none;">
+            <h3 class="achievements-title">🎉 Deine Erfolge:</h3>
+            <div id="achievements-list" class="achievements-list"></div>
+        </div>
+
+        <!-- Toast Container -->
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- Level Selection Screen -->
+        <div id="level-screen" class="screen active">
+            <div class="level-selection-container">
+                <h2 class="level-title">🚀 Wähle dein Level!</h2>
+                <p class="level-subtitle">Welche Klasse besuchst du?</p>
+
+                <div class="level-buttons">
+                    <!-- Beginner (Always Open) -->
+                    <button id="btn-beginner" class="level-btn beginner" onclick="selectLevel('beginner')">
+                        <div class="level-icon">🌱</div>
+                        <h3>Anfänger</h3>
+                        <p class="level-class">Klasse 2</p>
+                        <p class="level-description">Grundlagen der Grammatik</p>
+                    </button>
+
+                    <!-- Intermediate (Needs 300 pts) -->
+                    <button id="btn-intermediate" class="level-btn intermediate" onclick="selectLevel('intermediate')">
+                        <div class="lock-overlay" id="lock-intermediate">🔒</div>
+                        <div class="level-icon">⭐</div>
+                        <h3>Fortgeschritten</h3>
+                        <p class="level-class">Klasse 3</p>
+                        <p class="level-description">Ab 300 Punkten</p>
+                    </button>
+
+                    <!-- Advanced (Needs 1000 pts) -->
+                    <button id="btn-advanced" class="level-btn advanced" onclick="selectLevel('advanced')">
+                        <div class="lock-overlay" id="lock-advanced">🔒</div>
+                        <div class="level-icon">🏆</div>
+                        <h3>Experte</h3>
+                        <p class="level-class">Klasse 4</p>
+                        <p class="level-description">Ab 1000 Punkten</p>
                     </button>
                 </div>
-
-                <button id="replay-button" class="replay-button">
-                    <span class="sparkle-icon">✨</span>
-                    Neue Übungen
-                    <span class="sparkle-icon">✨</span>
-                </button>
-
-                <button id="reset-button" class="reset-button">
-                    Alles zurücksetzen 🗑️
-                </button>
             </div>
         </div>
 
-    </div>
+        <!-- Category Selection Screen -->
+        <div id="category-screen" class="screen" style="display: none;">
+
+            <div class="categories-grid">
+                <button class="category-card category-nomen" data-category="nomen" onclick="startCategory('nomen')">
+                    <div class="category-emoji">🏠</div>
+                    <h3 class="category-title">Nomen</h3>
+                    <p class="category-subtitle">(Namenwörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-verben" data-category="verben" onclick="startCategory('verben')">
+                    <div class="category-emoji">🏃</div>
+                    <h3 class="category-title">Verben</h3>
+                    <p class="category-subtitle">(Tunwörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-adjektive" data-category="adjektive"
+                    onclick="startCategory('adjektive')">
+                    <div class="category-emoji">🎨</div>
+                    <h3 class="category-title">Adjektive</h3>
+                    <p class="category-subtitle">(Wiewörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-saetze" data-category="saetze" onclick="startCategory('saetze')">
+                    <div class="category-emoji">📝</div>
+                    <h3 class="category-title">Sätze</h3>
+                    <p class="category-subtitle">(Satzbau)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-pronomen" data-category="pronomen"
+                    onclick="startCategory('pronomen')">
+                    <div class="category-emoji">👥</div>
+                    <h3 class="category-title">Pronomen</h3>
+                    <p class="category-subtitle">(Fürwörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-wortarten" data-category="wortarten"
+                    onclick="startCategory('wortarten')">
+                    <div class="category-emoji">🧩</div>
+                    <h3 class="category-title">Wortarten</h3>
+                    <p class="category-subtitle">(Grammatik-Mix)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="statistics-section">
+                <h3 class="statistics-title">📊 Deine Statistik</h3>
+                <div class="statistics-row">
+                    <div class="stat-item stat-blue">
+                        <div id="correct-answers" class="stat-value">0</div>
+                        <div class="stat-label">Richtige Antworten</div>
+                    </div>
+                    <div class="stat-item stat-purple">
+                        <div id="total-points-stat" class="stat-value">0</div>
+                        <div class="stat-label">Gesamtpunkte</div>
+                    </div>
+                    <div class="stat-item stat-green">
+                        <div id="achievements-count" class="stat-value">0</div>
+                        <div class="stat-label">Erfolge</div>
+                    </div>
+                </div>
+
+                <!-- Streak Display -->
+                <div id="streak-container" class="streak-card" style="display: none; margin-bottom: 0;">
+                    <div class="streak-content">
+                        <span class="streak-icon">⚡</span>
+                        <span id="streak-text" class="streak-text">0x Serie! +0 Bonuspunkte</span>
+                        <span class="streak-icon">⚡</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="settings-section">
+                <h3 class="settings-title">⚙️ Einstellungen</h3>
+                <div class="settings-grid">
+                    <!-- Sound Toggle (Moved here) -->
+                    <div class="sound-toggle-card-settings"
+                        style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--color-gray-200); padding: var(--spacing-md); border-radius: var(--radius-lg);">
+                        <span class="sound-label">🔊 Sound-Effekte</span>
+                        <button id="sound-toggle" class="toggle-button active">
+                            <span class="toggle-text">An</span>
+                        </button>
+                    </div>
+
+                    <button id="replay-button" class="replay-button">
+                        <span class="sparkle-icon">✨</span>
+                        Neue Übungen
+                        <span class="sparkle-icon">✨</span>
+                    </button>
+
+                    <button id="reset-button" class="reset-button">
+                        Alles zurücksetzen 🗑️
+                    </button>
+                </div>
+            </div>
+
+        </div>
     </div> <!-- Close category-screen content wrapper -->
     <!-- Extra div closure removed or consolidated -->
 
@@ -224,7 +234,7 @@
                 <h3 id="result-title" class="result-title">Super! Das ist richtig!</h3>
                 <p id="result-explanation" class="result-explanation"></p>
                 <div id="result-points" class="result-points"></div>
-                <button id="next-button" class="next-button">Weiter →</button>
+                <button id="next-button" class="next-button" onclick="nextQuestion()">Weiter →</button>
             </div>
         </div>
     </div>

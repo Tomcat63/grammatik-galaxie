@@ -15,55 +15,135 @@ const state = {
 };
 
 // ===== DOM Elements =====
-const elements = {
-    loading: document.getElementById('loading'),
-    levelScreen: document.getElementById('level-screen'),
-    categoryScreen: document.getElementById('category-screen'),
-    questionScreen: document.getElementById('question-screen'),
+// ===== DOM Elements =====
+let elements = {};
 
-    // Home screen elements
-    totalPointsDisplay: document.getElementById('total-points'),
-    totalPointsStat: document.getElementById('total-points-stat'),
-    levelIcon: document.getElementById('level-icon'),
-    levelName: document.getElementById('level-name'),
-    soundToggle: document.getElementById('sound-toggle'),
-    achievementsContainer: document.getElementById('achievements-container'),
-    achievementsList: document.getElementById('achievements-list'),
-    streakContainer: document.getElementById('streak-container'),
-    streakText: document.getElementById('streak-text'),
-    correctAnswersDisplay: document.getElementById('correct-answers'),
-    achievementsCount: document.getElementById('achievements-count'),
-    replayButton: document.getElementById('replay-button'),
-    categoryButtons: document.querySelectorAll('[data-category]'),
+function initElements() {
+    console.log("Initializing Elements...");
+    elements = {
+        loading: document.getElementById('loading'),
+        levelScreen: document.getElementById('level-screen'),
+        categoryScreen: document.getElementById('category-screen'),
+        questionScreen: document.getElementById('question-screen'),
 
-    // Question screen elements
-    celebration: document.getElementById('celebration'),
-    backButton: document.getElementById('back-button'),
-    soundToggleQuiz: document.getElementById('sound-toggle-quiz'),
-    soundIcon: document.getElementById('sound-icon'),
-    pointsDisplay: document.getElementById('points-display'),
-    progressBar: document.getElementById('progress-bar'),
-    currentQuestionNum: document.getElementById('current-question-num'),
-    totalQuestionsNum: document.getElementById('total-questions-num'),
-    questionText: document.getElementById('question-text'),
-    optionsContainer: document.getElementById('options-container'),
-    resultCard: document.getElementById('result-card'),
-    resultEmoji: document.getElementById('result-emoji'),
-    resultTitle: document.getElementById('result-title'),
-    resultExplanation: document.getElementById('result-explanation'),
-    resultPoints: document.getElementById('result-points'),
-    nextButton: document.getElementById('next-button')
-};
+        // Home screen elements
+        totalPointsDisplay: document.getElementById('total-points'),
+        totalPointsStat: document.getElementById('total-points-stat'),
+        levelIcon: document.getElementById('level-icon'),
+        levelName: document.getElementById('level-name'),
+        soundToggle: document.getElementById('sound-toggle'),
+        achievementsContainer: document.getElementById('achievements-container'),
+        achievementsList: document.getElementById('achievements-list'),
+        streakContainer: document.getElementById('streak-container'),
+        streakText: document.getElementById('streak-text'),
+        correctAnswersDisplay: document.getElementById('correct-answers'),
+        achievementsCount: document.getElementById('achievements-count'),
+        replayButton: document.getElementById('replay-button'),
+        categoryButtons: document.querySelectorAll('[data-category]'),
 
-// ===== Initialization =====
-async function init() {
-    loadStateFromLocalStorage();
-    initializeApp();
+        // Question screen elements
+        backButton: document.getElementById('back-button'),
+        soundToggleQuiz: document.getElementById('sound-toggle-quiz'),
+        soundIcon: document.getElementById('sound-icon'),
+        pointsDisplay: document.getElementById('points-display'),
+        progressBar: document.getElementById('progress-bar'),
+        currentQuestionNum: document.getElementById('current-question-num'),
+        totalQuestionsNum: document.getElementById('total-questions-num'),
+
+        // Critical Question Elements
+        questionText: document.getElementById('question-text'),
+        optionsContainer: document.getElementById('options-container'),
+
+        // Result Elements
+        celebration: document.getElementById('celebration'),
+        resultCard: document.getElementById('result-card'),
+        resultEmoji: document.getElementById('result-emoji'),
+        resultTitle: document.getElementById('result-title'),
+        resultExplanation: document.getElementById('result-explanation'),
+        resultPoints: document.getElementById('result-points'),
+        nextButton: document.getElementById('next-button')
+    };
+
+    // Debug check
+    if (!elements.questionText) console.error("CRITICAL: question-text element not found!");
+    if (!elements.optionsContainer) console.error("CRITICAL: options-container element not found!");
 }
 
+// ===== Level Locking Config =====
+const LEVEL_THRESHOLDS = {
+    beginner: 0,
+    intermediate: 300,
+    advanced: 1000
+};
+
+// Check if a level is unlocked
+function isLevelUnlocked(level) {
+    return state.totalPoints >= LEVEL_THRESHOLDS[level];
+}
+
+function updateLevelLocks() {
+    const levels = ['beginner', 'intermediate', 'advanced'];
+
+    levels.forEach(level => {
+        const btn = document.getElementById(`btn-${level}`);
+        const lock = document.getElementById(`lock-${level}`);
+
+        if (btn) {
+            if (isLevelUnlocked(level)) {
+                btn.classList.remove('locked');
+                btn.removeAttribute('disabled');
+                if (lock) lock.style.display = 'none';
+            } else {
+                btn.classList.add('locked');
+                btn.setAttribute('disabled', 'true');
+                if (lock) lock.style.display = 'flex';
+            }
+        }
+    });
+}
+
+function showUnlockToast(levelName) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'unlock-toast';
+    toast.innerHTML = `
+        <span style="font-size: 2rem;">🔓</span>
+        <div>
+            <div>Level freigeschaltet!</div>
+            <div style="font-size: 0.9rem; font-weight: normal;">${levelName} ist jetzt verfügbar.</div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Remove after 4 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
+
+    // Play success sound if enabled
+    if (state.soundEnabled) {
+        // Simple success beep or existing sound
+        const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'); // Example generic sound or reuse existing
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log("Audio play failed", e));
+    }
+}
+
+
 function initializeApp() {
+    initElements(); // Initialize elements here!
+
     // Show level screen first (if not already playing)
     if (elements.loading) elements.loading.style.display = 'none';
+
+    // Ensure locks are correct on start
+    updateLevelLocks();
+
     showScreen('level-screen');
     updateHomeScreen();
     setupEventListeners();
@@ -72,6 +152,12 @@ function initializeApp() {
 // ===== Level Selection =====
 window.selectLevel = function (level) {
     try {
+        if (!isLevelUnlocked(level)) {
+            // Should not happen due to pointer-events:none, but as safety:
+            alert(`🔒 Du brauchst ${LEVEL_THRESHOLDS[level]} Punkte für dieses Level!`);
+            return;
+        }
+
         state.currentLevel = level;
 
         // Select questions based on level
@@ -94,15 +180,30 @@ window.selectLevel = function (level) {
 };
 
 function showScreen(screenId) {
-    // Hide all screens
-    if (elements.levelScreen) elements.levelScreen.style.display = 'none';
-    if (elements.categoryScreen) elements.categoryScreen.style.display = 'none';
-    if (elements.questionScreen) elements.questionScreen.style.display = 'none';
-    if (elements.homeScreen) elements.homeScreen.style.display = 'none'; // Legacy support
+    // Hide all screens by ID and Class
+    const screens = ['level-screen', 'category-screen', 'question-screen', 'home-screen'];
+    screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
+            el.classList.remove('active');
+        }
+    });
 
     // Show requested screen
     const screen = document.getElementById(screenId);
-    if (screen) screen.style.display = 'block';
+    if (screen) {
+        screen.style.display = 'block';
+        screen.classList.add('active');
+
+        // If showing level screen, update locks
+        if (screenId === 'level-screen') {
+            updateLevelLocks();
+        }
+    } else {
+        console.error(`Screen ID ${screenId} not found!`);
+        alert(`Fehler: Screen ${screenId} nicht gefunden.`);
+    }
 }
 
 // ===== Event Listeners =====
@@ -230,13 +331,16 @@ function getLevel() {
 }
 
 // ===== Question Management =====
+// ===== Question Management =====
 function getRandomQuestions(category, count = 10) {
     const questions = state.allQuestions[category];
+    if (!questions) return [];
     const shuffled = [...questions].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, count);
 }
 
-function startCategory(category) {
+window.startCategory = function (category) {
+    console.log("Starting category:", category);
     try {
         state.currentCategory = category;
 
@@ -251,6 +355,7 @@ function startCategory(category) {
         // Check if category exists
         if (!state.allQuestions || !state.allQuestions[category]) {
             console.error(`Category '${category}' not found`);
+            alert(`Fehler: Kategorie '${category}' nicht gefunden!`);
             return;
         }
 
@@ -276,8 +381,9 @@ function startCategory(category) {
         updateQuestionScreen();
     } catch (e) {
         console.error("Error in startCategory:", e);
+        alert("Ein Fehler ist aufgetreten: " + e.message);
     }
-}
+};
 
 function nextQuestion() {
     if (state.currentQuestionIndex < state.currentQuestionSet.length - 1) {
@@ -291,48 +397,79 @@ function nextQuestion() {
     }
 }
 
+
 function updateQuestionScreen() {
     if (!state.currentQuestionSet || state.currentQuestionSet.length === 0) {
         console.error("currentQuestionSet is empty!");
         return;
     }
     const question = state.currentQuestionSet[state.currentQuestionIndex];
+    console.log("Rendering question:", question);
+
+    // Get elements directly to be safe
+    const progressBar = document.getElementById('progress-bar');
+    const currentQuestionNum = document.getElementById('current-question-num');
+    const totalQuestionsNum = document.getElementById('total-questions-num');
+    const pointsDisplay = document.getElementById('points-display');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const resultCard = document.getElementById('result-card');
+    const nextButton = document.getElementById('next-button');
 
     // Update progress
     const progress = ((state.currentQuestionIndex + 1) / state.currentQuestionSet.length) * 100;
-    if (elements.progressBar) elements.progressBar.style.width = `${progress}%`;
-    if (elements.currentQuestionNum) elements.currentQuestionNum.textContent = state.currentQuestionIndex + 1;
-    if (elements.totalQuestionsNum) elements.totalQuestionsNum.textContent = state.currentQuestionSet.length;
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (currentQuestionNum) currentQuestionNum.textContent = state.currentQuestionIndex + 1;
+    if (totalQuestionsNum) totalQuestionsNum.textContent = state.currentQuestionSet.length;
 
     // Update points display
-    if (elements.pointsDisplay) elements.pointsDisplay.textContent = state.totalPoints;
+    if (pointsDisplay) pointsDisplay.textContent = state.totalPoints;
 
     // Update question text
-    if (elements.questionText) elements.questionText.textContent = question.question;
+    if (questionText) {
+        questionText.textContent = question.question;
+    } else {
+        console.error("CRITICAL: question-text not found in updateQuestionScreen");
+    }
 
     // Create option buttons
-    if (elements.optionsContainer) {
-        elements.optionsContainer.innerHTML = '';
+    if (optionsContainer) {
+        optionsContainer.innerHTML = '';
         question.options.forEach((option, index) => {
             const button = document.createElement('button');
             button.className = 'option-button';
             button.textContent = option;
             button.addEventListener('click', () => handleAnswer(index));
-            elements.optionsContainer.appendChild(button);
+            optionsContainer.appendChild(button);
         });
+    } else {
+        console.error("CRITICAL: options-container not found in updateQuestionScreen");
     }
 
     // Hide result card and show next button
-    if (elements.resultCard) elements.resultCard.style.display = 'none';
-    if (elements.nextButton) elements.nextButton.style.display = 'block';
+    if (resultCard) resultCard.style.display = 'none';
+    if (nextButton) nextButton.style.display = 'block';
     state.showingResult = false;
 }
+
 
 function handleAnswer(selectedIndex) {
     if (state.showingResult) return;
 
     const question = state.currentQuestionSet[state.currentQuestionIndex];
     const isCorrect = selectedIndex === question.correctIndex;
+
+    console.log("Answer handled:", selectedIndex, "Correct:", isCorrect);
+
+    // Get elements directly
+    const resultCard = document.getElementById('result-card');
+    const resultEmoji = document.getElementById('result-emoji');
+    const resultTitle = document.getElementById('result-title');
+    const resultExplanation = document.getElementById('result-explanation');
+    const resultPoints = document.getElementById('result-points');
+    const nextButton = document.getElementById('next-button');
+    const optionsContainer = document.getElementById('options-container');
+    const celebration = document.getElementById('celebration');
 
     // Play sound
     playSound(isCorrect ? 'correct' : 'wrong');
@@ -343,28 +480,43 @@ function handleAnswer(selectedIndex) {
         state.showingResult = true;
 
         const points = 10 + (state.streak * 5);
+        const oldPoints = state.totalPoints;
         state.score++;
         state.totalPoints += points;
         state.streak++;
 
-        // Update options appearance - show correct answer
-        const optionButtons = elements.optionsContainer.querySelectorAll('.option-button');
-        optionButtons.forEach((button, index) => {
-            button.disabled = true;
+        // Check for Level Unlocks
+        if (oldPoints < 300 && state.totalPoints >= 300) {
+            showUnlockToast('Fortgeschritten');
+            updateLevelLocks(); // Unlock immediately in background
+        }
+        if (oldPoints < 1000 && state.totalPoints >= 1000) {
+            showUnlockToast('Experte');
+            updateLevelLocks();
+        }
 
-            if (index === question.correctIndex) {
-                button.classList.add('correct');
-                button.textContent += ' ✓';
-            } else {
-                button.classList.add('neutral');
-            }
-        });
+        saveState(); // Persist unlock status immediately
+
+        // Update options appearance - show correct answer
+        if (optionsContainer) {
+            const optionButtons = optionsContainer.querySelectorAll('.option-button');
+            optionButtons.forEach((button, index) => {
+                button.disabled = true;
+
+                if (index === question.correctIndex) {
+                    button.classList.add('correct');
+                    button.textContent += ' ✓';
+                } else {
+                    button.classList.add('neutral');
+                }
+            });
+        }
 
         // Show celebration
-        if (elements.celebration) {
-            elements.celebration.style.display = 'flex';
+        if (celebration) {
+            celebration.style.display = 'flex';
             setTimeout(() => {
-                elements.celebration.style.display = 'none';
+                celebration.style.display = 'none';
             }, 1000);
         }
 
@@ -372,33 +524,39 @@ function handleAnswer(selectedIndex) {
         checkAchievements();
 
         // Show result
-        if (elements.resultCard) {
-            elements.resultCard.className = 'result-card correct';
-            elements.resultEmoji.textContent = '🎉';
-            elements.resultTitle.textContent = 'Super! Das ist richtig!';
-            elements.resultExplanation.textContent = question.explanation;
-            elements.resultPoints.textContent = `+${points} Punkte!${state.streak > 1 ? ` 🔥 ${state.streak}x Serie!` : ''}`;
+        if (resultCard) {
+            resultCard.className = 'result-card correct';
+            resultCard.style.display = 'block'; // Make sure it's visible!
 
-            // Update next button text and show it
-            if (state.currentQuestionIndex < state.currentQuestionSet.length - 1) {
-                elements.nextButton.textContent = 'Weiter →';
-            } else {
-                elements.nextButton.textContent = 'Fertig! 🎊';
-            }
-            elements.nextButton.style.display = 'block';
-
-            // Show result card
-            elements.resultCard.style.display = 'block';
+            if (resultEmoji) resultEmoji.textContent = '🎉';
+            if (resultTitle) resultTitle.textContent = 'Super! Das ist richtig!';
+            if (resultExplanation) resultExplanation.textContent = question.explanation;
+            if (resultPoints) resultPoints.textContent = `+${points} Punkte!${state.streak > 1 ? ` 🔥 ${state.streak}x Serie!` : ''}`;
         }
+
+        // Update next button text and show it
+        if (nextButton) {
+            if (state.currentQuestionIndex < state.currentQuestionSet.length - 1) {
+                nextButton.textContent = 'Weiter →';
+            } else {
+                nextButton.textContent = 'Fertig! 🎊';
+            }
+            nextButton.style.display = 'block';
+        }
+
     } else {
         // Wrong answer - let user try again
         state.streak = 0;
 
         // Mark wrong answer as incorrect (but don't show correct answer)
-        const optionButtons = elements.optionsContainer.querySelectorAll('.option-button');
-        optionButtons[selectedIndex].classList.add('incorrect');
-        optionButtons[selectedIndex].textContent += ' ✗';
-        optionButtons[selectedIndex].disabled = true;
+        if (optionsContainer) {
+            const optionButtons = optionsContainer.querySelectorAll('.option-button');
+            if (optionButtons[selectedIndex]) {
+                optionButtons[selectedIndex].classList.add('incorrect');
+                optionButtons[selectedIndex].textContent += ' ✗';
+                optionButtons[selectedIndex].disabled = true;
+            }
+        }
 
         // Random encouraging messages
         const encouragingMessages = [
@@ -412,20 +570,21 @@ function handleAnswer(selectedIndex) {
         const randomMessage = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
 
         // Show encouraging message (without showing correct answer)
-        if (elements.resultCard) {
-            elements.resultCard.className = 'result-card incorrect';
-            elements.resultEmoji.textContent = '💡';
-            elements.resultTitle.textContent = randomMessage;
-            elements.resultExplanation.textContent = 'Überlege nochmal in Ruhe...';
-            elements.resultPoints.textContent = '';
+        if (resultCard) {
+            resultCard.className = 'result-card incorrect';
+            resultCard.style.display = 'block';
+
+            if (resultEmoji) resultEmoji.textContent = '💡';
+            if (resultTitle) resultTitle.textContent = randomMessage;
+            if (resultExplanation) resultExplanation.textContent = 'Überlege nochmal in Ruhe...';
+            if (resultPoints) resultPoints.textContent = '';
 
             // Hide next button - user must try again
-            elements.nextButton.style.display = 'none';
+            if (nextButton) nextButton.style.display = 'none';
 
-            // Show result card briefly, then hide it
-            elements.resultCard.style.display = 'block';
+            // Show result card briefly, then hide it so they can retry
             setTimeout(() => {
-                elements.resultCard.style.display = 'none';
+                resultCard.style.display = 'none';
             }, 2000);
         }
     }
@@ -486,41 +645,9 @@ function resetProgress() {
     }
 }
 
-// ===== Home Screen Updates =====
-function updateHomeScreen() {
-    // Update points
-    elements.totalPointsDisplay.textContent = state.totalPoints;
-    elements.totalPointsStat.textContent = state.totalPoints;
-
-    // Update level
-    const level = getLevel();
-    elements.levelIcon.textContent = level.icon;
-    elements.levelName.textContent = level.name;
-
-    // Update stats
-    elements.correctAnswersDisplay.textContent = state.score;
-    elements.achievementsCount.textContent = state.achievements.length;
-
-    // Update achievements display
-    if (state.achievements.length > 0) {
-        elements.achievementsContainer.style.display = 'block';
-        elements.achievementsList.innerHTML = state.achievements
-            .map(achievement => `<span class="achievement-badge">${achievement}</span>`)
-            .join('');
-    } else {
-        elements.achievementsContainer.style.display = 'none';
-    }
-
-    // Update streak display
-    if (state.streak > 0) {
-        elements.streakContainer.style.display = 'block';
-        elements.streakText.textContent = `${state.streak}x Serie! +${state.streak * 5} Bonuspunkte`;
-    } else {
-        elements.streakContainer.style.display = 'none';
-    }
-
-    // Update sound UI
-    updateSoundUI();
+// Alias for consistency
+function saveState() {
+    saveStateToLocalStorage();
 }
 
 // ===== LocalStorage =====
@@ -554,6 +681,35 @@ function loadStateFromLocalStorage() {
     } catch (error) {
         console.warn('Fehler beim Laden des Spielstands:', error);
     }
+}
+
+
+function updateHomeScreen() {
+    // Update points and stats
+    if (elements.totalPointsDisplay) elements.totalPointsDisplay.textContent = state.totalPoints;
+    if (elements.totalPointsStat) elements.totalPointsStat.textContent = state.totalPoints;
+    if (elements.achievementsCount) elements.achievementsCount.textContent = state.achievements.length;
+
+    // Update streak display (if element exists)
+    if (elements.streakContainer) {
+        if (state.streak > 0) {
+            elements.streakContainer.style.display = 'flex';
+            if (elements.streakText) elements.streakText.textContent = `${state.streak}x Serie!`;
+        } else {
+            elements.streakContainer.style.display = 'none';
+        }
+    }
+
+    // Update correct answers count
+    if (elements.correctAnswersDisplay) elements.correctAnswersDisplay.textContent = state.score;
+
+    // Update level info
+    const currentLevelInfo = getLevel();
+    if (elements.levelIcon) elements.levelIcon.textContent = currentLevelInfo.icon;
+    if (elements.levelName) elements.levelName.textContent = currentLevelInfo.name;
+
+    // Update sound UI
+    updateSoundUI();
 }
 
 // ===== Start App =====
