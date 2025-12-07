@@ -328,6 +328,60 @@ body {
   font-size: 1.5rem;
 }
 
+/* ===== Categories Grid ===== */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.category-card {
+  background: white;
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+  color: white;
+}
+
+.category-card:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-2xl);
+}
+
+.category-nomen {
+  background: var(--color-blue);
+}
+
+.category-verben {
+  background: var(--color-green);
+}
+
+.category-adjektive {
+  background: var(--color-purple);
+}
+
+.category-saetze {
+  background: var(--color-orange);
+}
+
+.category-pronomen {
+  background: #FBBF24;
+}
+
+.category-wortarten {
+  background: #06B6D4;
+}
+
+.category-emoji {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+}
+
 .streak-text {
   font-size: 1.5rem;
 }
