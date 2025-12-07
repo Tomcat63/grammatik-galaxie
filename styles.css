@@ -772,7 +772,13 @@ body {
     font-size: 1.5rem;
   }
 
-  .categories-grid {`n  display: grid;`n  grid-template-columns: repeat(3, 1fr);`n  gap: var(--spacing-lg);`n  margin-bottom: var(--spacing-xl);`n}
+  .categories-grid {
+    `n display: grid;
+    `n grid-template-columns: repeat(3, 1fr);
+    `n gap: var(--spacing-lg);
+    `n margin-bottom: var(--spacing-xl);
+    `n
+  }
 
   .stats-grid {
     grid-template-columns: 1fr;
@@ -807,4 +813,241 @@ body {
   .category-title {
     font-size: 1.25rem;
   }
+}
+
+/* Level Selection Styles */
+.level-selection-container {
+  text-align: center;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.level-title {
+  font-size: 2.5rem;
+  color: #fff;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.level-subtitle {
+  font-size: 1.2rem;
+  color: #aebce0;
+  margin-bottom: 40px;
+}
+
+.level-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 30px;
+  padding: 10px;
+}
+
+.level-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 30px 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.level-btn:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.level-icon {
+  font-size: 4rem;
+  margin-bottom: 15px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.level-btn h3 {
+  color: #fff;
+  font-size: 1.5rem;
+  margin: 10px 0;
+}
+
+.level-class {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.level-description {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+/* Level Specific Styles */
+.level-btn.beginner {
+  background: linear-gradient(135deg, rgba(86, 171, 47, 0.2), rgba(168, 224, 99, 0.2));
+  border-bottom: 4px solid #56ab2f;
+}
+
+.level-btn.beginner:hover {
+  background: linear-gradient(135deg, rgba(86, 171, 47, 0.4), rgba(168, 224, 99, 0.4));
+}
+
+.level-btn.intermediate {
+  background: linear-gradient(135deg, rgba(247, 151, 30, 0.2), rgba(255, 210, 0, 0.2));
+  border-bottom: 4px solid #f7971e;
+}
+
+.level-btn.intermediate:hover {
+  background: linear-gradient(135deg, rgba(247, 151, 30, 0.4), rgba(255, 210, 0, 0.4));
+}
+
+.level-btn.advanced {
+  background: linear-gradient(135deg, rgba(131, 58, 180, 0.2), rgba(253, 29, 29, 0.2));
+  border-bottom: 4px solid #833ab4;
+}
+
+.level-btn.advanced:hover {
+  background: linear-gradient(135deg, rgba(131, 58, 180, 0.4), rgba(253, 29, 29, 0.4));
+}
+
+/* Badges update */
+.level-badge {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 8px 16px;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: bold;
+  color: #fff;
+  font-size: 1rem;
+  backdrop-filter: blur(5px);
+}
+
+
+/* Level Selection Styles */
+.level-selection-container {
+  text-align: center;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.level-title {
+  font-size: 2.5rem;
+  color: #fff;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.level-subtitle {
+  font-size: 1.2rem;
+  color: #aebce0;
+  margin-bottom: 40px;
+}
+
+.level-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 30px;
+  padding: 10px;
+}
+
+.level-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 30px 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.level-btn:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.level-icon {
+  font-size: 4rem;
+  margin-bottom: 15px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.level-btn h3 {
+  color: #fff;
+  font-size: 1.5rem;
+  margin: 10px 0;
+}
+
+.level-class {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.level-description {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+/* Level Specific Styles */
+.level-btn.beginner {
+  background: linear-gradient(135deg, rgba(86, 171, 47, 0.2), rgba(168, 224, 99, 0.2));
+  border-bottom: 4px solid #56ab2f;
+}
+
+.level-btn.beginner:hover {
+  background: linear-gradient(135deg, rgba(86, 171, 47, 0.4), rgba(168, 224, 99, 0.4));
+}
+
+.level-btn.intermediate {
+  background: linear-gradient(135deg, rgba(247, 151, 30, 0.2), rgba(255, 210, 0, 0.2));
+  border-bottom: 4px solid #f7971e;
+}
+
+.level-btn.intermediate:hover {
+  background: linear-gradient(135deg, rgba(247, 151, 30, 0.4), rgba(255, 210, 0, 0.4));
+}
+
+.level-btn.advanced {
+  background: linear-gradient(135deg, rgba(131, 58, 180, 0.2), rgba(253, 29, 29, 0.2));
+  border-bottom: 4px solid #833ab4;
+}
+
+.level-btn.advanced:hover {
+  background: linear-gradient(135deg, rgba(131, 58, 180, 0.4), rgba(253, 29, 29, 0.4));
+}
+
+/* Badges update */
+.level-badge {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 8px 16px;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: bold;
+  color: #fff;
+  font-size: 1rem;
+  backdrop-filter: blur(5px);
 }

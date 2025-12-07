@@ -1,6 +1,7 @@
 // ===== State Management =====
 const state = {
     allQuestions: null,
+    currentLevel: null,
     currentCategory: null,
     currentQuestionSet: [],
     currentQuestionIndex: 0,
@@ -16,7 +17,8 @@ const state = {
 // ===== DOM Elements =====
 const elements = {
     loading: document.getElementById('loading'),
-    homeScreen: document.getElementById('home-screen'),
+    levelScreen: document.getElementById('level-screen'),
+    categoryScreen: document.getElementById('category-screen'),
     questionScreen: document.getElementById('question-screen'),
 
     // Home screen elements
@@ -55,64 +57,86 @@ const elements = {
 
 // ===== Initialization =====
 async function init() {
-    // Load saved state from localStorage
     loadStateFromLocalStorage();
-
-    // Load questions from global variable or JSON file
-    if (window.QUESTIONS_DATA) {
-        // Use embedded questions data (works with file:// protocol)
-        state.allQuestions = window.QUESTIONS_DATA;
-        initializeApp();
-    } else {
-        // Fallback: Try to fetch questions.json
-        try {
-            const response = await fetch('./questions.json');
-            if (!response.ok) throw new Error('Fetch failed');
-            state.allQuestions = await response.json();
-            initializeApp();
-        } catch (error) {
-            console.error('Fehler beim Laden der Fragen:', error);
-            elements.loading.querySelector('p').textContent = 'Fehler beim Laden der Fragen. Bitte Seite neu laden.';
-        }
-    }
+    initializeApp();
 }
 
 function initializeApp() {
-    // Hide loading, show home screen
-    elements.loading.style.display = 'none';
-    elements.homeScreen.style.display = 'block';
-
-    // Update UI
+    // Show level screen first (if not already playing)
+    if (elements.loading) elements.loading.style.display = 'none';
+    showScreen('level-screen');
     updateHomeScreen();
-
-    // Setup event listeners
     setupEventListeners();
+}
+
+// ===== Level Selection =====
+window.selectLevel = function (level) {
+    state.currentLevel = level;
+
+    // Select questions based on level
+    if (level === 'beginner') {
+        state.allQuestions = window.QUESTIONS_BEGINNER;
+    } else if (level === 'intermediate') {
+        state.allQuestions = window.QUESTIONS_INTERMEDIATE;
+    } else if (level === 'advanced') {
+        state.allQuestions = window.QUESTIONS_ADVANCED;
+    } else {
+        // Fallback to beginner if something is wrong
+        state.allQuestions = window.QUESTIONS_BEGINNER;
+    }
+
+    // Show category screen
+    showScreen('category-screen');
+};
+
+function showScreen(screenId) {
+    // Hide all screens
+    if (elements.levelScreen) elements.levelScreen.style.display = 'none';
+    if (elements.categoryScreen) elements.categoryScreen.style.display = 'none';
+    if (elements.questionScreen) elements.questionScreen.style.display = 'none';
+    if (elements.homeScreen) elements.homeScreen.style.display = 'none'; // Legacy support
+
+    // Show requested screen
+    const screen = document.getElementById(screenId);
+    if (screen) screen.style.display = 'block';
 }
 
 // ===== Event Listeners =====
 function setupEventListeners() {
     // Sound toggle (home)
-    elements.soundToggle.addEventListener('click', toggleSound);
+    if (elements.soundToggle) {
+        elements.soundToggle.addEventListener('click', toggleSound);
+    }
 
     // Category selection
-    elements.categoryButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const category = button.dataset.category;
-            startCategory(category);
+    if (elements.categoryButtons) {
+        elements.categoryButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const category = button.dataset.category;
+                startCategory(category);
+            });
         });
-    });
+    }
 
     // Replay button
-    elements.replayButton.addEventListener('click', replay);
+    if (elements.replayButton) {
+        elements.replayButton.addEventListener('click', replay);
+    }
 
-    // Back button
-    elements.backButton.addEventListener('click', goHome);
+    // Back button - now goes back to category screen
+    if (elements.backButton) {
+        elements.backButton.addEventListener('click', goHome);
+    }
 
     // Sound toggle (quiz)
-    elements.soundToggleQuiz.addEventListener('click', toggleSound);
+    if (elements.soundToggleQuiz) {
+        elements.soundToggleQuiz.addEventListener('click', toggleSound);
+    }
 
     // Next button
-    elements.nextButton.addEventListener('click', nextQuestion);
+    if (elements.nextButton) {
+        elements.nextButton.addEventListener('click', nextQuestion);
+    }
 }
 
 // ===== Sound Functions =====
@@ -204,167 +228,28 @@ function getRandomQuestions(category, count = 10) {
 
 function startCategory(category) {
     state.currentCategory = category;
+
+    // Ensure questions are loaded
+    if (!state.allQuestions) {
+        state.allQuestions = window.QUESTIONS_BEGINNER;
+    }
+
+    // Check if category exists
+    if (!state.allQuestions[category] || state.allQuestions[category].length === 0) {
+        alert("Diese Kategorie ist in diesem Level noch nicht verfügbar! 🚧");
+        return;
+    }
+
     state.currentQuestionSet = getRandomQuestions(category);
     state.currentQuestionIndex = 0;
     state.selectedAnswer = null;
     state.showingResult = false;
 
     // Switch to question screen
-    elements.homeScreen.style.display = 'none';
-    elements.questionScreen.style.display = 'block';
+    showScreen('question-screen');
 
     // Update UI
     updateQuestionScreen();
-}
-
-function updateQuestionScreen() {
-    const question = state.currentQuestionSet[state.currentQuestionIndex];
-
-    // Update progress
-    const progress = ((state.currentQuestionIndex + 1) / state.currentQuestionSet.length) * 100;
-    elements.progressBar.style.width = `${progress}%`;
-    elements.currentQuestionNum.textContent = state.currentQuestionIndex + 1;
-    elements.totalQuestionsNum.textContent = state.currentQuestionSet.length;
-
-    // Update points display
-    elements.pointsDisplay.textContent = state.totalPoints;
-
-    // Update question text
-    elements.questionText.textContent = question.question;
-
-    // Create option buttons
-    elements.optionsContainer.innerHTML = '';
-    question.options.forEach((option, index) => {
-        const button = document.createElement('button');
-        button.className = 'option-button';
-        button.textContent = option;
-        button.addEventListener('click', () => handleAnswer(index));
-        elements.optionsContainer.appendChild(button);
-    });
-
-    // Hide result card and show next button
-    elements.resultCard.style.display = 'none';
-    elements.nextButton.style.display = 'block';
-    state.showingResult = false;
-}
-
-function handleAnswer(selectedIndex) {
-    if (state.showingResult) return;
-
-    const question = state.currentQuestionSet[state.currentQuestionIndex];
-    const isCorrect = selectedIndex === question.correctIndex;
-
-    // Play sound
-    playSound(isCorrect ? 'correct' : 'wrong');
-
-    // Handle correct/incorrect logic
-    if (isCorrect) {
-        state.selectedAnswer = selectedIndex;
-        state.showingResult = true;
-
-        const points = 10 + (state.streak * 5);
-        state.score++;
-        state.totalPoints += points;
-        state.streak++;
-
-        // Update options appearance - show correct answer
-        const optionButtons = elements.optionsContainer.querySelectorAll('.option-button');
-        optionButtons.forEach((button, index) => {
-            button.disabled = true;
-
-            if (index === question.correctIndex) {
-                button.classList.add('correct');
-                button.textContent += ' ✓';
-            } else {
-                button.classList.add('neutral');
-            }
-        });
-
-        // Show celebration
-        elements.celebration.style.display = 'flex';
-        setTimeout(() => {
-            elements.celebration.style.display = 'none';
-        }, 1000);
-
-        // Check for achievements
-        checkAchievements();
-
-        // Show result
-        elements.resultCard.className = 'result-card correct';
-        elements.resultEmoji.textContent = '🎉';
-        elements.resultTitle.textContent = 'Super! Das ist richtig!';
-        elements.resultExplanation.textContent = question.explanation;
-        elements.resultPoints.textContent = `+${points} Punkte!${state.streak > 1 ? ` 🔥 ${state.streak}x Serie!` : ''}`;
-
-        // Update next button text and show it
-        if (state.currentQuestionIndex < state.currentQuestionSet.length - 1) {
-            elements.nextButton.textContent = 'Weiter →';
-        } else {
-            elements.nextButton.textContent = 'Fertig! 🎊';
-        }
-        elements.nextButton.style.display = 'block';
-
-        // Show result card
-        elements.resultCard.style.display = 'block';
-    } else {
-        // Wrong answer - let user try again
-        state.streak = 0;
-
-        // Mark wrong answer as incorrect (but don't show correct answer)
-        const optionButtons = elements.optionsContainer.querySelectorAll('.option-button');
-        optionButtons[selectedIndex].classList.add('incorrect');
-        optionButtons[selectedIndex].textContent += ' ✗';
-        optionButtons[selectedIndex].disabled = true;
-
-        // Random encouraging messages
-        const encouragingMessages = [
-            'Fast, Antoni! Versuch es nochmal! 💪',
-            'Nicht ganz, aber du schaffst das! 🌟',
-            'Probier eine andere Antwort, Antoni! 🎯',
-            'Fast richtig! Welche Antwort könnte es sein? 🤔',
-            'Noch ein Versuch, Antoni! Du bist nah dran! ⭐'
-        ];
-
-        const randomMessage = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
-
-        // Show encouraging message (without showing correct answer)
-        elements.resultCard.className = 'result-card incorrect';
-        elements.resultEmoji.textContent = '💡';
-        elements.resultTitle.textContent = randomMessage;
-        elements.resultExplanation.textContent = 'Überlege nochmal in Ruhe...';
-        elements.resultPoints.textContent = '';
-
-        // Hide next button - user must try again
-        elements.nextButton.style.display = 'none';
-
-        // Show result card briefly, then hide it
-        elements.resultCard.style.display = 'block';
-        setTimeout(() => {
-            elements.resultCard.style.display = 'none';
-        }, 2000);
-    }
-
-    // Save state
-    saveStateToLocalStorage();
-}
-
-function checkAchievements() {
-    const newAchievements = [];
-
-    if (state.streak === 3 && !state.achievements.includes('🔥 3er Serie!')) {
-        newAchievements.push('🔥 3er Serie!');
-    }
-    if (state.streak === 5 && !state.achievements.includes('⚡ 5er Serie!')) {
-        newAchievements.push('⚡ 5er Serie!');
-    }
-    if (state.streak === 10 && !state.achievements.includes('👑 10er Serie!')) {
-        newAchievements.push('👑 10er Serie!');
-    }
-
-    if (newAchievements.length > 0) {
-        state.achievements.push(...newAchievements);
-        saveStateToLocalStorage();
-    }
 }
 
 function nextQuestion() {
@@ -385,8 +270,8 @@ function goHome() {
     state.selectedAnswer = null;
     state.showingResult = false;
 
-    elements.questionScreen.style.display = 'none';
-    elements.homeScreen.style.display = 'block';
+    // Go back to category screen
+    showScreen('category-screen');
 
     updateHomeScreen();
 }
@@ -400,6 +285,8 @@ function replay() {
     state.streak = 0;
 
     saveStateToLocalStorage();
+    // Go to level selection or category? Let's go to level selection for replay to allow change
+    showScreen('level-screen');
     updateHomeScreen();
 }
 
