@@ -1,0 +1,587 @@
+import React, { useState, useEffect } from 'react';
+import { Trophy, Star, Award, Sparkles, BookOpen, Zap, Volume2 } from 'lucide-react';
+
+const GrammarApp = () => {
+  const [currentCategory, setCurrentCategory] = useState(null);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [achievements, setAchievements] = useState([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Sound-Effekte mit Web Audio API
+  const playSound = (type) => {
+    if (!soundEnabled) return;
+    
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    if (type === 'correct') {
+      // Fröhlicher Erfolgs-Sound
+      const notes = [523.25, 659.25, 783.99]; // C, E, G
+      notes.forEach((freq, i) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.3);
+        osc.start(audioContext.currentTime + i * 0.1);
+        osc.stop(audioContext.currentTime + i * 0.1 + 0.3);
+      });
+    } else {
+      // Sanfter "Versuch es nochmal"-Sound
+      oscillator.frequency.value = 200;
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.3);
+    }
+  };
+
+  const allQuestions = {
+    nomen: [
+      { q: 'Welches Wort ist ein Nomen?', o: ['laufen', 'Haus', 'schnell', 'grün'], c: 1, e: 'Super Antoni! Nomen schreibt man groß!' },
+      { q: 'Welcher Artikel passt zu "Katze"?', o: ['der', 'die', 'das'], c: 1, e: 'Richtig! Die Katze ist weiblich!' },
+      { q: 'Was ist die Mehrzahl von "Ball"?', o: ['Balls', 'Bälle', 'Ballen'], c: 1, e: 'Genau, Antoni! Aus Ball wird Bälle.' },
+      { q: 'Welcher Artikel gehört zu "Auto"?', o: ['der', 'die', 'das'], c: 2, e: 'Klasse! Das Auto ist sächlich.' },
+      { q: 'Was ist die Mehrzahl von "Kind"?', o: ['Kinds', 'Kinder', 'Kindern'], c: 1, e: 'Perfekt! Ein Kind, viele Kinder.' },
+      { q: 'Welches ist ein Nomen?', o: ['schön', 'Baum', 'gehen', 'lustig'], c: 1, e: 'Toll gemacht! Baum wird großgeschrieben.' },
+      { q: 'Der Artikel von "Sonne" ist...', o: ['der', 'die', 'das'], c: 1, e: 'Super, Antoni! Die Sonne scheint.' },
+      { q: 'Was ist die Einzahl von "Bücher"?', o: ['Buch', 'Buche', 'Büch'], c: 0, e: 'Richtig! Viele Bücher, ein Buch.' },
+      { q: 'Welches Wort muss groß?', o: ['blau', 'tisch', 'schnell', 'laut'], c: 1, e: 'Ja! Tisch ist ein Nomen: der Tisch.' },
+      { q: 'Der Artikel von "Mond" ist...', o: ['der', 'die', 'das'], c: 0, e: 'Klasse! Der Mond leuchtet nachts.' },
+      { q: 'Was ist die Mehrzahl von "Buch"?', o: ['Bücher', 'Büchs', 'Buchen'], c: 0, e: 'Prima! Ein Buch, viele Bücher.' },
+      { q: 'Welcher Artikel zu "Blume"?', o: ['der', 'die', 'das'], c: 1, e: 'Super! Die Blume blüht.' },
+      { q: 'Was ist die Mehrzahl von "Hund"?', o: ['Hunds', 'Hunde', 'Hunden'], c: 1, e: 'Toll! Ein Hund, viele Hunde.' },
+      { q: 'Der Artikel von "Fenster" ist...', o: ['der', 'die', 'das'], c: 2, e: 'Richtig, Antoni! Das Fenster.' },
+      { q: 'Welches ist ein Nomen?', o: ['kalt', 'Winter', 'frieren', 'weiß'], c: 1, e: 'Klasse! Winter ist ein Nomen.' },
+      { q: 'Was ist die Einzahl von "Äpfel"?', o: ['Apfel', 'Äpfels', 'Apfe'], c: 0, e: 'Genau! Viele Äpfel, ein Apfel.' },
+      { q: 'Der Artikel von "Tür" ist...', o: ['der', 'die', 'das'], c: 1, e: 'Super! Die Tür ist auf.' },
+      { q: 'Was ist die Mehrzahl von "Stuhl"?', o: ['Stühle', 'Stuhle', 'Stühls'], c: 0, e: 'Prima, Antoni! Ein Stuhl, viele Stühle.' },
+      { q: 'Welcher Artikel zu "Tisch"?', o: ['der', 'die', 'das'], c: 0, e: 'Richtig! Der Tisch ist braun.' },
+      { q: 'Was ist die Mehrzahl von "Haus"?', o: ['Häuser', 'Hause', 'Hauses'], c: 0, e: 'Toll! Ein Haus, viele Häuser.' },
+      { q: 'Der Artikel von "Schule" ist...', o: ['der', 'die', 'das'], c: 1, e: 'Klasse! Die Schule beginnt.' },
+      { q: 'Welches ist ein Nomen?', o: ['spielen', 'Ball', 'rund', 'schnell'], c: 1, e: 'Super! Ball ist ein Nomen.' },
+      { q: 'Was ist die Mehrzahl von "Baum"?', o: ['Bäume', 'Baums', 'Baumen'], c: 0, e: 'Perfekt! Ein Baum, viele Bäume.' },
+      { q: 'Der Artikel von "Garten" ist...', o: ['der', 'die', 'das'], c: 0, e: 'Richtig, Antoni! Der Garten ist grün.' },
+      { q: 'Was ist die Einzahl von "Blumen"?', o: ['Blume', 'Blum', 'Blumes'], c: 0, e: 'Toll! Viele Blumen, eine Blume.' },
+      { q: 'Welcher Artikel zu "Wasser"?', o: ['der', 'die', 'das'], c: 2, e: 'Klasse! Das Wasser ist kalt.' },
+      { q: 'Welches ist ein Nomen?', o: ['rot', 'Apfel', 'essen', 'süß'], c: 1, e: 'Prima! Apfel ist ein Nomen.' },
+      { q: 'Was ist die Mehrzahl von "Vogel"?', o: ['Vögel', 'Vogels', 'Vogelen'], c: 0, e: 'Super! Ein Vogel, viele Vögel.' },
+      { q: 'Der Artikel von "Lehrer" ist...', o: ['der', 'die', 'das'], c: 0, e: 'Richtig! Der Lehrer erklärt.' },
+      { q: 'Was ist die Mehrzahl von "Fisch"?', o: ['Fische', 'Fischs', 'Fischen'], c: 0, e: 'Genau! Ein Fisch, viele Fische.' },
+      { q: 'Welcher Artikel zu "Mutter"?', o: ['der', 'die', 'das'], c: 1, e: 'Toll! Die Mutter ist lieb.' },
+      { q: 'Was ist die Einzahl von "Schuhe"?', o: ['Schuh', 'Schuhs', 'Schuhe'], c: 0, e: 'Klasse! Viele Schuhe, ein Schuh.' },
+      { q: 'Der Artikel von "Brot" ist...', o: ['der', 'die', 'das'], c: 2, e: 'Prima! Das Brot ist frisch.' },
+      { q: 'Welches ist ein Nomen?', o: ['lesen', 'Buch', 'interessant', 'gern'], c: 1, e: 'Super, Antoni! Buch ist ein Nomen.' },
+      { q: 'Was ist die Mehrzahl von "Teller"?', o: ['Teller', 'Tellers', 'Tellern'], c: 0, e: 'Richtig! Ein Teller, viele Teller.' },
+      { q: 'Der Artikel von "Uhr" ist...', o: ['der', 'die', 'das'], c: 1, e: 'Toll! Die Uhr tickt.' },
+      { q: 'Was ist die Mehrzahl von "Glas"?', o: ['Gläser', 'Glass', 'Glase'], c: 0, e: 'Klasse! Ein Glas, viele Gläser.' },
+      { q: 'Welcher Artikel zu "Vater"?', o: ['der', 'die', 'das'], c: 0, e: 'Prima! Der Vater arbeitet.' },
+      { q: 'Was ist die Einzahl von "Kinder"?', o: ['Kind', 'Kinds', 'Kinde'], c: 0, e: 'Super! Viele Kinder, ein Kind.' },
+      { q: 'Der Artikel von "Milch" ist...', o: ['der', 'die', 'das'], c: 1, e: 'Genau! Die Milch ist weiß.' },
+      { q: 'Welches ist ein Nomen?', o: ['fliegen', 'Flugzeug', 'hoch', 'schnell'], c: 1, e: 'Toll! Flugzeug ist ein Nomen.' },
+      { q: 'Was ist die Mehrzahl von "Löffel"?', o: ['Löffel', 'Löffels', 'Löffeln'], c: 0, e: 'Richtig! Ein Löffel, viele Löffel.' },
+      { q: 'Der Artikel von "Fahrrad" ist...', o: ['der', 'die', 'das'], c: 2, e: 'Klasse! Das Fahrrad fährt.' },
+      { q: 'Was ist die Mehrzahl von "Messer"?', o: ['Messer', 'Messers', 'Messern'], c: 0, e: 'Prima! Ein Messer, viele Messer.' },
+      { q: 'Welcher Artikel zu "Bruder"?', o: ['der', 'die', 'das'], c: 0, e: 'Super! Der Bruder spielt.' },
+      { q: 'Was ist die Einzahl von "Autos"?', o: ['Auto', 'Autos', 'Autes'], c: 0, e: 'Toll! Viele Autos, ein Auto.' },
+      { q: 'Der Artikel von "Schwester" ist...', o: ['der', 'die', 'das'], c: 1, e: 'Genau! Die Schwester lacht.' },
+      { q: 'Welches ist ein Nomen?', o: ['malen', 'Bild', 'bunt', 'schön'], c: 1, e: 'Klasse, Antoni! Bild ist ein Nomen.' },
+      { q: 'Was ist die Mehrzahl von "Zahn"?', o: ['Zähne', 'Zahns', 'Zahnen'], c: 0, e: 'Richtig! Ein Zahn, viele Zähne.' },
+      { q: 'Der Artikel von "Butter" ist...', o: ['der', 'die', 'das'], c: 1, e: 'Prima! Die Butter ist gelb.' }
+    ],
+    verben: [
+      { q: 'Welches Wort ist ein Verb?', o: ['Baum', 'springen', 'schön', 'Freude'], c: 1, e: 'Prima, Antoni! Verben sind Tunwörter!' },
+      { q: 'Wie heißt es? "Ich ___ Apfel."', o: ['esse', 'isst', 'essen'], c: 0, e: 'Richtig! Bei ICH: ich esse!' },
+      { q: 'Grundform von "lief"?', o: ['laufen', 'läuft', 'laufe'], c: 0, e: 'Super! Die Grundform ist laufen!' },
+      { q: 'Wie heißt es? "Du ___ Ball."', o: ['spiele', 'spielst', 'spielen'], c: 1, e: 'Toll! Du spielst Fußball.' },
+      { q: 'Grundform von "aß"?', o: ['essen', 'isst', 'aßen'], c: 0, e: 'Genau, Antoni! Essen ist die Grundform.' },
+      { q: 'Welches ist ein Verb?', o: ['Tisch', 'schnell', 'malen', 'rot'], c: 2, e: 'Richtig! Malen ist eine Tätigkeit.' },
+      { q: 'Wie heißt es? "Er ___ heim."', o: ['gehe', 'gehst', 'geht'], c: 2, e: 'Prima! Er geht nach Hause.' },
+      { q: 'Grundform von "schwamm"?', o: ['schwimmen', 'schwimmt', 'schwimme'], c: 0, e: 'Klasse! Schwimmen ist die Grundform.' },
+      { q: 'Welches Verb passt? "Vogel ___"', o: ['fliegt', 'fliegst', 'fliegen'], c: 0, e: 'Super, Antoni! Der Vogel fliegt.' },
+      { q: 'Wie heißt es? "Wir ___ Kino."', o: ['geht', 'gehe', 'gehen'], c: 2, e: 'Perfekt! Wir gehen ins Kino.' },
+      { q: 'Grundform von "sang"?', o: ['singen', 'singt', 'singe'], c: 0, e: 'Toll! Singen ist die Grundform.' },
+      { q: 'Wie heißt es? "Sie ___ Bild."', o: ['male', 'malst', 'malt'], c: 2, e: 'Richtig! Sie malt ein Bild.' },
+      { q: 'Welches ist ein Verb?', o: ['Haus', 'bauen', 'groß', 'neu'], c: 1, e: 'Klasse! Bauen ist ein Verb.' },
+      { q: 'Grundform von "rannte"?', o: ['rennen', 'rennt', 'renne'], c: 0, e: 'Super! Rennen ist die Grundform.' },
+      { q: 'Wie heißt es? "Ich ___ laut."', o: ['lache', 'lachst', 'lacht'], c: 0, e: 'Prima, Antoni! Ich lache laut.' },
+      { q: 'Grundform von "trank"?', o: ['trinken', 'trinkt', 'trinke'], c: 0, e: 'Genau! Trinken ist die Grundform.' },
+      { q: 'Wie heißt es? "Du ___ schnell."', o: ['laufe', 'läufst', 'laufen'], c: 1, e: 'Toll! Du läufst schnell.' },
+      { q: 'Welches ist ein Verb?', o: ['Musik', 'hören', 'laut', 'schön'], c: 1, e: 'Richtig! Hören ist ein Verb.' },
+      { q: 'Grundform von "schrieb"?', o: ['schreiben', 'schreibt', 'schreibe'], c: 0, e: 'Klasse! Schreiben ist die Grundform.' },
+      { q: 'Wie heißt es? "Er ___ Rad."', o: ['fahre', 'fährst', 'fährt'], c: 2, e: 'Super! Er fährt Rad.' },
+      { q: 'Grundform von "warf"?', o: ['werfen', 'wirft', 'werfe'], c: 0, e: 'Prima! Werfen ist die Grundform.' },
+      { q: 'Wie heißt es? "Wir ___ Musik."', o: ['höre', 'hörst', 'hören'], c: 2, e: 'Toll, Antoni! Wir hören Musik.' },
+      { q: 'Welches ist ein Verb?', o: ['Ball', 'fangen', 'rund', 'klein'], c: 1, e: 'Genau! Fangen ist ein Verb.' },
+      { q: 'Grundform von "las"?', o: ['lesen', 'liest', 'lese'], c: 0, e: 'Richtig! Lesen ist die Grundform.' },
+      { q: 'Wie heißt es? "Ich ___ gern."', o: ['lese', 'liest', 'lesen'], c: 0, e: 'Klasse! Ich lese gern.' },
+      { q: 'Grundform von "half"?', o: ['helfen', 'hilft', 'helfe'], c: 0, e: 'Super! Helfen ist die Grundform.' },
+      { q: 'Wie heißt es? "Du ___ mit."', o: ['helfe', 'hilfst', 'helfen'], c: 1, e: 'Prima! Du hilfst mit.' },
+      { q: 'Welches ist ein Verb?', o: ['Fenster', 'öffnen', 'groß', 'klar'], c: 1, e: 'Toll! Öffnen ist ein Verb.' },
+      { q: 'Grundform von "kam"?', o: ['kommen', 'kommt', 'komme'], c: 0, e: 'Genau, Antoni! Kommen ist die Grundform.' },
+      { q: 'Wie heißt es? "Sie ___ heute."', o: ['komme', 'kommst', 'kommt'], c: 2, e: 'Richtig! Sie kommt heute.' },
+      { q: 'Grundform von "fand"?', o: ['finden', 'findet', 'finde'], c: 0, e: 'Klasse! Finden ist die Grundform.' },
+      { q: 'Wie heißt es? "Wir ___ Schatz."', o: ['finde', 'findest', 'finden'], c: 2, e: 'Super! Wir finden den Schatz.' },
+      { q: 'Welches ist ein Verb?', o: ['Tür', 'schließen', 'alt', 'braun'], c: 1, e: 'Prima! Schließen ist ein Verb.' },
+      { q: 'Grundform von "saß"?', o: ['sitzen', 'sitzt', 'sitze'], c: 0, e: 'Toll! Sitzen ist die Grundform.' },
+      { q: 'Wie heißt es? "Ich ___ hier."', o: ['sitze', 'sitzt', 'sitzen'], c: 0, e: 'Genau! Ich sitze hier.' },
+      { q: 'Grundform von "stand"?', o: ['stehen', 'steht', 'stehe'], c: 0, e: 'Richtig, Antoni! Stehen ist die Grundform.' },
+      { q: 'Wie heißt es? "Du ___ da."', o: ['stehe', 'stehst', 'stehen'], c: 1, e: 'Klasse! Du stehst da.' },
+      { q: 'Welches ist ein Verb?', o: ['Kuchen', 'backen', 'süß', 'lecker'], c: 1, e: 'Super! Backen ist ein Verb.' },
+      { q: 'Grundform von "schlief"?', o: ['schlafen', 'schläft', 'schlafe'], c: 0, e: 'Prima! Schlafen ist die Grundform.' },
+      { q: 'Wie heißt es? "Er ___ tief."', o: ['schlafe', 'schläfst', 'schläft'], c: 2, e: 'Toll! Er schläft tief.' },
+      { q: 'Grundform von "gab"?', o: ['geben', 'gibt', 'gebe'], c: 0, e: 'Genau! Geben ist die Grundform.' },
+      { q: 'Wie heißt es? "Ich ___ dir."', o: ['gebe', 'gibst', 'geben'], c: 0, e: 'Richtig, Antoni! Ich gebe dir.' },
+      { q: 'Welches ist ein Verb?', o: ['Buch', 'legen', 'dick', 'neu'], c: 1, e: 'Klasse! Legen ist ein Verb.' },
+      { q: 'Grundform von "nahm"?', o: ['nehmen', 'nimmt', 'nehme'], c: 0, e: 'Super! Nehmen ist die Grundform.' },
+      { q: 'Wie heißt es? "Du ___ das."', o: ['nehme', 'nimmst', 'nehmen'], c: 1, e: 'Prima! Du nimmst das.' },
+      { q: 'Grundform von "lag"?', o: ['liegen', 'liegt', 'liege'], c: 0, e: 'Toll! Liegen ist die Grundform.' },
+      { q: 'Wie heißt es? "Wir ___ dort."', o: ['liege', 'liegst', 'liegen'], c: 2, e: 'Genau! Wir liegen dort.' },
+      { q: 'Welches ist ein Verb?', o: ['Wasser', 'trinken', 'kalt', 'klar'], c: 1, e: 'Richtig! Trinken ist ein Verb.' },
+      { q: 'Grundform von "brachte"?', o: ['bringen', 'bringt', 'bringe'], c: 0, e: 'Klasse, Antoni! Bringen ist die Grundform.' },
+      { q: 'Wie heißt es? "Sie ___ mit."', o: ['bringe', 'bringst', 'bringt'], c: 2, e: 'Super! Sie bringt mit.' }
+    ],
+    adjektive: [
+      { q: 'Welches beschreibt WIE?', o: ['Hund', 'rennen', 'schnell'], c: 2, e: 'Toll! Schnell beschreibt WIE!' },
+      { q: 'Steigerung von "groß"?', o: ['größer', 'großer', 'am großen'], c: 0, e: 'Richtig, Antoni! Groß - größer!' },
+      { q: 'Gegenteil von "klein"?', o: ['groß', 'lang', 'dick'], c: 0, e: 'Genau! Klein ↔ groß!' },
+      { q: 'Welches ist Adjektiv?', o: ['Haus', 'laufen', 'schön', 'Freude'], c: 2, e: 'Super! Schön beschreibt etwas.' },
+      { q: 'Gegenteil von "hell"?', o: ['dunkel', 'schwer', 'leise'], c: 0, e: 'Klasse, Antoni! Hell ↔ dunkel!' },
+      { q: 'Steigerung von "schnell"?', o: ['schneller', 'am schnellen', 'schnellst'], c: 0, e: 'Prima! Schnell - schneller!' },
+      { q: 'Welches ist Adjektiv?', o: ['lustig', 'Spiel', 'spielen', 'heute'], c: 0, e: 'Richtig! Lustig beschreibt.' },
+      { q: 'Gegenteil von "warm"?', o: ['heiß', 'kalt', 'kühl'], c: 1, e: 'Toll! Warm ↔ kalt!' },
+      { q: 'Steigerung von "alt"?', o: ['alter', 'älter', 'altest'], c: 1, e: 'Super, Antoni! Alt - älter!' },
+      { q: 'Welches ist Farbe?', o: ['grün', 'Gras', 'wachsen', 'Wiese'], c: 0, e: 'Genau! Grün ist ein Adjektiv.' },
+      { q: 'Gegenteil von "lang"?', o: ['kurz', 'klein', 'dünn'], c: 0, e: 'Klasse! Lang ↔ kurz!' },
+      { q: 'Steigerung von "schön"?', o: ['schöner', 'am schönen', 'schönst'], c: 0, e: 'Prima! Schön - schöner!' },
+      { q: 'Welches ist Adjektiv?', o: ['Sonne', 'scheinen', 'hell', 'Himmel'], c: 2, e: 'Toll! Hell beschreibt.' },
+      { q: 'Gegenteil von "dick"?', o: ['dünn', 'klein', 'kurz'], c: 0, e: 'Richtig, Antoni! Dick ↔ dünn!' },
+      { q: 'Steigerung von "klein"?', o: ['kleiner', 'am kleinen', 'kleinst'], c: 0, e: 'Super! Klein - kleiner!' },
+      { q: 'Welches ist Adjektiv?', o: ['traurig', 'Träne', 'weinen', 'Auge'], c: 0, e: 'Genau! Traurig beschreibt.' },
+      { q: 'Gegenteil von "laut"?', o: ['leise', 'still', 'ruhig'], c: 0, e: 'Klasse! Laut ↔ leise!' },
+      { q: 'Steigerung von "jung"?', o: ['jünger', 'junger', 'am jungen'], c: 0, e: 'Prima, Antoni! Jung - jünger!' },
+      { q: 'Welches ist Adjektiv?', o: ['Eis', 'essen', 'kalt', 'Becher'], c: 2, e: 'Toll! Kalt beschreibt.' },
+      { q: 'Gegenteil von "hart"?', o: ['weich', 'sanft', 'zart'], c: 0, e: 'Richtig! Hart ↔ weich!' },
+      { q: 'Steigerung von "stark"?', o: ['stärker', 'starker', 'am starken'], c: 0, e: 'Super! Stark - stärker!' },
+      { q: 'Welches ist Adjektiv?', o: ['fröhlich', 'Freude', 'lachen', 'Mund'], c: 0, e: 'Genau, Antoni! Fröhlich beschreibt.' },
+      { q: 'Gegenteil von "neu"?', o: ['alt', 'kaputt', 'schmutzig'], c: 0, e: 'Klasse! Neu ↔ alt!' },
+      { q: 'Steigerung von "langsam"?', o: ['langsamer', 'am langsamen', 'langsamst'], c: 0, e: 'Prima! Langsam - langsamer!' },
+      { q: 'Welches ist Adjektiv?', o: ['Blume', 'duften', 'süß', 'Garten'], c: 2, e: 'Toll! Süß beschreibt.' },
+      { q: 'Gegenteil von "sauber"?', o: ['schmutzig', 'dreckig', 'unrein'], c: 0, e: 'Richtig, Antoni! Sauber ↔ schmutzig!' },
+      { q: 'Steigerung von "nah"?', o: ['näher', 'naher', 'am nahen'], c: 0, e: 'Super! Nah - näher!' },
+      { q: 'Welches ist Adjektiv?', o: ['mutig', 'Mut', 'kämpfen', 'Held'], c: 0, e: 'Genau! Mutig beschreibt.' },
+      { q: 'Gegenteil von "voll"?', o: ['leer', 'wenig', 'kaum'], c: 0, e: 'Klasse! Voll ↔ leer!' },
+      { q: 'Steigerung von "hoch"?', o: ['höher', 'hocher', 'am hochen'], c: 0, e: 'Prima, Antoni! Hoch - höher!' },
+      { q: 'Welches ist Adjektiv?', o: ['Stern', 'leuchten', 'hell', 'Nacht'], c: 2, e: 'Toll! Hell beschreibt.' },
+      { q: 'Gegenteil von "trocken"?', o: ['nass', 'feucht', 'regnerisch'], c: 0, e: 'Richtig! Trocken ↔ nass!' },
+      { q: 'Steigerung von "breit"?', o: ['breiter', 'breiter', 'am breiten'], c: 0, e: 'Super! Breit - breiter!' },
+      { q: 'Welches ist Adjektiv?', o: ['ängstlich', 'Angst', 'fürchten', 'Gefahr'], c: 0, e: 'Genau, Antoni! Ängstlich beschreibt.' },
+      { q: 'Gegenteil von "oben"?', o: ['unten', 'tief', 'niedrig'], c: 0, e: 'Klasse! Oben ↔ unten!' },
+      { q: 'Steigerung von "wenig"?', o: ['weniger', 'wenigst', 'am wenigen'], c: 0, e: 'Prima! Wenig - weniger!' },
+      { q: 'Welches ist Adjektiv?', o: ['hungrig', 'Hunger', 'essen', 'Magen'], c: 0, e: 'Toll! Hungrig beschreibt.' },
+      { q: 'Gegenteil von "früh"?', o: ['spät', 'später', 'nachher'], c: 0, e: 'Richtig, Antoni! Früh ↔ spät!' },
+      { q: 'Steigerung von "viel"?', o: ['mehr', 'vieler', 'am vielen'], c: 0, e: 'Super! Viel - mehr!' },
+      { q: 'Welches ist Adjektiv?', o: ['glücklich', 'Glück', 'freuen', 'Lächeln'], c: 0, e: 'Genau! Glücklich beschreibt.' },
+      { q: 'Gegenteil von "richtig"?', o: ['falsch', 'verkehrt', 'unrichtig'], c: 0, e: 'Klasse, Antoni! Richtig ↔ falsch!' },
+      { q: 'Steigerung von "dumm"?', o: ['dümmer', 'dummer', 'am dummen'], c: 0, e: 'Prima! Dumm - dümmer!' },
+      { q: 'Welches ist Adjektiv?', o: ['Musik', 'spielen', 'laut', 'Ton'], c: 2, e: 'Toll! Laut beschreibt.' },
+      { q: 'Gegenteil von "schwer"?', o: ['leicht', 'einfach', 'simpel'], c: 0, e: 'Richtig! Schwer ↔ leicht!' },
+      { q: 'Steigerung von "faul"?', o: ['fauler', 'fauler', 'am faulen'], c: 0, e: 'Super, Antoni! Faul - fauler!' },
+      { q: 'Welches ist Adjektiv?', o: ['klug', 'Klugheit', 'denken', 'Kopf'], c: 0, e: 'Genau! Klug beschreibt.' },
+      { q: 'Gegenteil von "gerade"?', o: ['krumm', 'schief', 'verbogen'], c: 0, e: 'Klasse! Gerade ↔ krumm!' },
+      { q: 'Steigerung von "arm"?', o: ['ärmer', 'armer', 'am armen'], c: 0, e: 'Prima! Arm - ärmer!' },
+      { q: 'Welches ist Adjektiv?', o: ['Brot', 'backen', 'frisch', 'Ofen'], c: 2, e: 'Toll, Antoni! Frisch beschreibt.' },
+      { q: 'Gegenteil von "eng"?', o: ['weit', 'breit', 'groß'], c: 0, e: 'Richtig! Eng ↔ weit!' }
+    ],
+    saetze: [
+      { q: 'Welches Zeichen? "Kommst du"', o: ['.', '!', '?'], c: 2, e: 'Richtig! Bei Fragen steht ein ?' },
+      { q: 'Wie fängt Satz an?', o: ['mit Punkt', 'mit großem Buchstaben', 'mit Komma'], c: 1, e: 'Super, Antoni! Sätze beginnen groß!' },
+      { q: 'Was ist falsch? "der hund"', o: ['Alles ok', 'Hund muss groß', 'Punkt fehlt'], c: 1, e: 'Genau! Nomen groß: Der Hund.' },
+      { q: 'Welches Zeichen? "Das toll"', o: ['.', '!', '?'], c: 1, e: 'Toll! Bei Begeisterung kommt ein !' },
+      { q: 'Was fehlt? "ich spiele"', o: ['Punkt', 'Großer Anfang', 'Komma'], c: 1, e: 'Richtig, Antoni! Ich spiele.' },
+      { q: 'Welches Zeichen? "Wie heißt du"', o: ['.', '!', '?'], c: 2, e: 'Prima! Bei Fragen steht ein ?' },
+      { q: 'Was ist richtig?', o: ['Der Hund bellt.', 'der hund bellt.', 'Der hund bellt'], c: 0, e: 'Super! Groß am Anfang, Punkt am Ende!' },
+      { q: 'Welches Zeichen? "Aua, weh"', o: ['.', '!', '?'], c: 1, e: 'Genau! Bei Ausrufen steht ein !' },
+      { q: 'Was fehlt? "Die Katze"', o: ['Nichts', 'Punkt', 'Fragezeichen'], c: 1, e: 'Richtig, Antoni! Die Katze schläft.' },
+      { q: 'Wie ist richtig?', o: ['Wo bist Du?', 'wo bist du?', 'Wo bist du?'], c: 2, e: 'Klasse! Groß am Anfang, ? am Ende!' },
+      { q: 'Was fehlt? "Heute ist"', o: ['Punkt fehlt', 'Nomen fehlt', 'Nichts'], c: 0, e: 'Toll! Punkt am Satzende.' },
+      { q: 'Welches Zeichen? "Hilfe"', o: ['.', '!', '?'], c: 1, e: 'Super, Antoni! Bei Notrufen: !' },
+      { q: 'Was ist falsch? "ball rollt"', o: ['Alles ok', 'Ball groß', 'Punkt fehlt'], c: 1, e: 'Richtig! Nomen groß: Ball.' },
+      { q: 'Wie fängt an? "die sonne"', o: ['klein ok', 'Die groß', 'egal'], c: 1, e: 'Genau! Die Sonne - groß!' },
+      { q: 'Welches Zeichen? "Bist du da"', o: ['.', '!', '?'], c: 2, e: 'Prima! Frage = ?' },
+      { q: 'Was fehlt? "Wir gehen"', o: ['Nichts', 'Punkt', 'Komma'], c: 1, e: 'Toll! Wir gehen.' },
+      { q: 'Wie ist richtig?', o: ['ich laufe.', 'Ich laufe.', 'Ich Laufe.'], c: 1, e: 'Klasse, Antoni! Ich laufe.' },
+      { q: 'Welches Zeichen? "Wie spät"', o: ['.', '!', '?'], c: 2, e: 'Richtig! Wie-Frage = ?' },
+      { q: 'Was ist falsch? "Das haus"', o: ['Nichts', 'Haus groß', 'Punkt fehlt'], c: 1, e: 'Super! Nomen groß: Haus.' },
+      { q: 'Wie endet Satz?', o: ['mit .!?', 'mit Komma', 'einfach so'], c: 0, e: 'Genau! Sätze enden mit .!?' },
+      { q: 'Welches Zeichen? "Super gemacht"', o: ['.', '!', '?'], c: 1, e: 'Prima, Antoni! Lob = !' },
+      { q: 'Was fehlt? "mein Hund"', o: ['Punkt', 'Mein groß', 'Nichts'], c: 1, e: 'Toll! Satzanfang groß: Mein.' },
+      { q: 'Wie ist richtig?', o: ['er kommt.', 'Er kommt.', 'Er Kommt.'], c: 1, e: 'Klasse! Er kommt.' },
+      { q: 'Welches Zeichen? "Wo bist"', o: ['.', '!', '?'], c: 2, e: 'Richtig! Wo-Frage = ?' },
+      { q: 'Was ist falsch? "die katze"', o: ['Alles ok', 'Katze groß', 'Die klein'], c: 1, e: 'Super, Antoni! Nomen groß: Katze.' },
+      { q: 'Wie fängt an?', o: ['klein', 'GROSS', 'Groß'], c: 2, e: 'Genau! Satzanfang groß.' },
+      { q: 'Welches Zeichen? "Toll"', o: ['.', '!', '?'], c: 1, e: 'Prima! Begeisterung = !' },
+      { q: 'Was fehlt? "sie spielt"', o: ['Sie groß', 'Punkt', 'Beides'], c: 2, e: 'Toll! Sie spielt.' },
+      { q: 'Wie ist richtig?', o: ['das Auto fährt', 'Das auto fährt', 'Das Auto fährt'], c: 2, e: 'Klasse, Antoni! Das Auto fährt.' },
+      { q: 'Welches Zeichen? "Was machst"', o: ['.', '!', '?'], c: 2, e: 'Richtig! Was-Frage = ?' },
+      { q: 'Was ist falsch? "Haus groß"', o: ['Nichts', 'Punkt fehlt', 'Verb fehlt'], c: 2, e: 'Super! "Das Haus ist groß."' },
+      { q: 'Wie endet? "Ich bin 8"', o: ['.', '!', '?'], c: 0, e: 'Genau, Antoni! Aussage = .' },
+      { q: 'Welches Zeichen? "Juhu"', o: ['.', '!', '?'], c: 1, e: 'Prima! Jubel = !' },
+      { q: 'Was fehlt? "wir lernen"', o: ['Punkt', 'Wir groß', 'Beides'], c: 2, e: 'Toll! Wir lernen.' },
+      { q: 'Wie ist richtig?', o: ['Die Sonne Scheint', 'die sonne scheint', 'Die Sonne scheint'], c: 2, e: 'Klasse! Die Sonne scheint.' },
+      { q: 'Welches Zeichen? "Wer ist"', o: ['.', '!', '?'], c: 2, e: 'Richtig, Antoni! Wer-Frage = ?' },
+      { q: 'Was ist falsch? "ball ist"', o: ['Alles ok', 'Ball groß', 'Rund fehlt'], c: 1, e: 'Super! Nomen groß: Ball.' },
+      { q: 'Wie fängt an? "heute"', o: ['klein ok', 'Heute groß', 'egal'], c: 1, e: 'Genau! Satzanfang: Heute.' },
+      { q: 'Welches Zeichen? "Kannst du"', o: ['.', '!', '?'], c: 2, e: 'Prima! Frage = ?' },
+      { q: 'Was fehlt? "Der Baum"', o: ['Nichts', 'ist groß', 'Punkt'], c: 2, e: 'Toll, Antoni! Der Baum ist groß.' },
+      { q: 'Wie ist richtig?', o: ['wir Spielen', 'Wir spielen', 'Wir Spielen'], c: 1, e: 'Klasse! Wir spielen.' },
+      { q: 'Welches Zeichen? "Warum"', o: ['.', '!', '?'], c: 2, e: 'Richtig! Warum-Frage = ?' },
+      { q: 'Was ist falsch? "tür auf"', o: ['Nichts', 'Tür groß', 'Die fehlt'], c: 1, e: 'Super! Nomen groß: Tür.' },
+      { q: 'Wie endet? "Gut gemacht"', o: ['.', '!', '?'], c: 1, e: 'Genau, Antoni! Lob = !' },
+      { q: 'Welches Zeichen? "Wohin"', o: ['.', '!', '?'], c: 2, e: 'Prima! Wohin-Frage = ?' },
+      { q: 'Was fehlt? "du kommst"', o: ['Du groß', 'Punkt', 'Beides'], c: 2, e: 'Toll! Du kommst.' },
+      { q: 'Wie ist richtig?', o: ['ich mag Das', 'Ich mag das', 'Ich Mag Das'], c: 1, e: 'Klasse, Antoni! Ich mag das.' },
+      { q: 'Welches Zeichen? "Schau mal"', o: ['.', '!', '?'], c: 1, e: 'Richtig! Aufforderung = !' },
+      { q: 'Was ist falsch? "auto fährt"', o: ['Nichts', 'Auto groß', 'Das fehlt'], c: 1, e: 'Super! Nomen groß: Auto.' },
+      { q: 'Wie fängt an? "gestern"', o: ['klein', 'Gestern', 'egal'], c: 1, e: 'Genau! Satzanfang: Gestern.' }
+    ]
+  };
+
+  const getRandomQuestions = () => {
+    const selected = { nomen: [], verben: [], adjektive: [], saetze: [] };
+    Object.keys(allQuestions).forEach(cat => {
+      const shuffled = [...allQuestions[cat]].sort(() => Math.random() - 0.5);
+      selected[cat] = shuffled.slice(0, 10);
+    });
+    return selected;
+  };
+
+  const [questionSet, setQuestionSet] = useState(getRandomQuestions());
+
+  const categories = {
+    nomen: {
+      name: '🏠 Nomen (Namenwörter)',
+      color: 'bg-blue-500',
+      questions: questionSet.nomen
+    },
+    verben: {
+      name: '🏃 Verben (Tunwörter)',
+      color: 'bg-green-500',
+      questions: questionSet.verben
+    },
+    adjektive: {
+      name: '🎨 Adjektive (Wiewörter)',
+      color: 'bg-purple-500',
+      questions: questionSet.adjektive
+    },
+    saetze: {
+      name: '📝 Sätze & Satzzeichen',
+      color: 'bg-orange-500',
+      questions: questionSet.saetze
+    }
+  };
+
+  const handleAnswer = (index) => {
+    setSelectedAnswer(index);
+    const isCorrect = index === categories[currentCategory].questions[currentQuestion].c;
+    
+    // Sound-Effekt abspielen
+    playSound(isCorrect ? 'correct' : 'wrong');
+    
+    if (isCorrect) {
+      const points = 10 + (streak * 5);
+      setScore(score + 1);
+      setTotalPoints(totalPoints + points);
+      setStreak(streak + 1);
+      setShowCelebration(true);
+      
+      if (streak + 1 === 3) {
+        setAchievements([...achievements, '🔥 3er Serie!']);
+      }
+      if (streak + 1 === 5) {
+        setAchievements([...achievements, '⚡ 5er Serie!']);
+      }
+      if (streak + 1 === 10) {
+        setAchievements([...achievements, '👑 10er Serie!']);
+      }
+      
+      setTimeout(() => setShowCelebration(false), 1000);
+    } else {
+      setStreak(0);
+    }
+    
+    setShowResult(true);
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestion < categories[currentCategory].questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+    } else {
+      setCurrentCategory(null);
+      setCurrentQuestion(0);
+      setSelectedAnswer(null);
+      setShowResult(false);
+    }
+  };
+
+  const handleReplay = () => {
+    setQuestionSet(getRandomQuestions());
+    setCurrentCategory(null);
+    setCurrentQuestion(0);
+    setScore(0);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setShowCelebration(false);
+    setStreak(0);
+  };
+
+  const getLevel = () => {
+    if (totalPoints < 100) return { name: 'Anfänger', icon: '🌱' };
+    if (totalPoints < 300) return { name: 'Lerner', icon: '🌿' };
+    if (totalPoints < 600) return { name: 'Profi', icon: '🌳' };
+    if (totalPoints < 1000) return { name: 'Experte', icon: '🏆' };
+    return { name: 'Meister', icon: '👑' };
+  };
+
+  if (!currentCategory) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header mit Punktestand */}
+          <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6 transform hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-3">
+                  <BookOpen className="text-blue-600" size={40} />
+                  Antonis Grammatik-Abenteuer
+                </h1>
+                <p className="text-gray-600 mt-2">Übe Grammatik und sammle Punkte, Antoni! 🎯</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-purple-600 flex items-center gap-2">
+                  <Star className="text-yellow-500" fill="currentColor" />
+                  {totalPoints}
+                </div>
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  {getLevel().icon} {getLevel().name}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sound Toggle */}
+          <div className="bg-white rounded-xl shadow-lg p-4 mb-6 flex items-center justify-between">
+            <span className="font-bold text-gray-700">🔊 Sound-Effekte</span>
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`px-6 py-2 rounded-lg font-bold transition-all ${
+                soundEnabled
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-300 text-gray-600'
+              }`}
+            >
+              {soundEnabled ? 'An' : 'Aus'}
+            </button>
+          </div>
+
+          {/* Achievements */}
+          {achievements.length > 0 && (
+            <div className="bg-yellow-100 border-2 border-yellow-400 rounded-xl p-4 mb-6 animate-bounce">
+              <h3 className="font-bold text-yellow-800 mb-2">🎉 Erfolge:</h3>
+              <div className="flex flex-wrap gap-2">
+                {achievements.map((achievement, i) => (
+                  <span key={i} className="bg-yellow-300 px-3 py-1 rounded-full text-sm font-bold">
+                    {achievement}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Streak Anzeige */}
+          {streak > 0 && (
+            <div className="bg-orange-100 border-2 border-orange-400 rounded-xl p-4 mb-6">
+              <div className="flex items-center justify-center gap-2">
+                <Zap className="text-orange-500" fill="currentColor" />
+                <span className="text-2xl font-bold text-orange-600">
+                  {streak}x Serie! +{streak * 5} Bonuspunkte
+                </span>
+                <Zap className="text-orange-500" fill="currentColor" />
+              </div>
+            </div>
+          )}
+
+          {/* Kategorien */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {Object.keys(categories).map((key) => (
+              <button
+                key={key}
+                onClick={() => setCurrentCategory(key)}
+                className={`${categories[key].color} text-white p-8 rounded-2xl shadow-xl transform hover:scale-105 transition-all hover:shadow-2xl`}
+              >
+                <div className="text-5xl mb-4">{categories[key].name.split(' ')[0]}</div>
+                <h3 className="text-2xl font-bold mb-2">
+                  {categories[key].name.split(' ').slice(1).join(' ')}
+                </h3>
+                <p className="text-white/90">{categories[key].questions.length} Fragen</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Motivations-Bereich */}
+          <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Trophy className="text-yellow-500" />
+              Deine Fortschritte, Antoni!
+            </h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="bg-blue-100 p-4 rounded-xl">
+                <div className="text-3xl font-bold text-blue-600">{score}</div>
+                <div className="text-sm text-gray-600">Richtige Antworten</div>
+              </div>
+              <div className="bg-purple-100 p-4 rounded-xl">
+                <div className="text-3xl font-bold text-purple-600">{totalPoints}</div>
+                <div className="text-sm text-gray-600">Gesamtpunkte</div>
+              </div>
+              <div className="bg-green-100 p-4 rounded-xl">
+                <div className="text-3xl font-bold text-green-600">{achievements.length}</div>
+                <div className="text-sm text-gray-600">Erfolge</div>
+              </div>
+            </div>
+            
+            {/* Replay Button */}
+            <button
+              onClick={handleReplay}
+              className="mt-6 w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-4 px-8 rounded-xl text-xl transform hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <Sparkles size={24} />
+              Neue Übungen starten!
+              <Sparkles size={24} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const question = categories[currentCategory].questions[currentQuestion];
+  const isCorrect = selectedAnswer === question.c;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 p-6">
+      <div className="max-w-2xl mx-auto">
+        {/* Celebration Overlay */}
+        {showCelebration && (
+          <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
+            <div className="text-9xl animate-ping">🎉</div>
+          </div>
+        )}
+
+        {/* Progress Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <button
+              onClick={() => setCurrentCategory(null)}
+              className="text-gray-600 hover:text-gray-800 font-bold"
+            >
+              ← Zurück
+            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`p-2 rounded-lg ${soundEnabled ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}
+              >
+                <Volume2 size={20} />
+              </button>
+              <div className="flex items-center gap-2">
+                <Star className="text-yellow-500" fill="currentColor" size={24} />
+                <span className="text-2xl font-bold text-purple-600">{totalPoints}</span>
+              </div>
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-4">
+            <div
+              className="bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full transition-all duration-500"
+              style={{ width: `${((currentQuestion + 1) / categories[currentCategory].questions.length) * 100}%` }}
+            ></div>
+          </div>
+          <div className="text-center mt-2 text-gray-600 font-bold">
+            Frage {currentQuestion + 1} von {categories[currentCategory].questions.length}
+          </div>
+        </div>
+
+        {/* Question Card */}
+        <div className="bg-white rounded-2xl shadow-2xl p-8 mb-6">
+          <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+            {question.q}
+          </h2>
+
+          <div className="space-y-4">
+            {question.o.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => !showResult && handleAnswer(index)}
+                disabled={showResult}
+                className={`w-full p-6 rounded-xl text-xl font-bold transition-all transform hover:scale-105 ${
+                  showResult
+                    ? index === question.c
+                      ? 'bg-green-500 text-white'
+                      : index === selectedAnswer
+                      ? 'bg-red-500 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                    : 'bg-blue-100 hover:bg-blue-200 text-blue-800'
+                }`}
+              >
+                {option}
+                {showResult && index === question.c && ' ✓'}
+                {showResult && index === selectedAnswer && index !== question.c && ' ✗'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Result */}
+        {showResult && (
+          <div className={`rounded-2xl shadow-xl p-6 mb-6 ${isCorrect ? 'bg-green-100 border-4 border-green-500' : 'bg-orange-100 border-4 border-orange-500'}`}>
+            <div className="text-center">
+              <div className="text-6xl mb-4">{isCorrect ? '🎉' : '💡'}</div>
+              <h3 className="text-2xl font-bold mb-2">
+                {isCorrect ? 'Super! Das ist richtig!' : 'Fast! Versuch es nochmal!'}
+              </h3>
+              <p className="text-lg text-gray-700 mb-4">{question.e}</p>
+              {isCorrect && (
+                <div className="text-2xl font-bold text-green-600">
+                  +{10 + (streak * 5)} Punkte! {streak > 1 && `🔥 ${streak}x Serie!`}
+                </div>
+              )}
+              <button
+                onClick={nextQuestion}
+                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl text-xl transform hover:scale-105 transition-all"
+              >
+                {currentQuestion < categories[currentCategory].questions.length - 1 ? 'Weiter →' : 'Fertig! 🎊'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default GrammarApp;

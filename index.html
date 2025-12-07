@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Antonis Grammatik-Abenteuer - Interaktive Lern-App für deutsche Grammatik mit 300 Fragen">
+    <meta name="keywords"
+        content="Grammatik, Deutsch lernen, Grundschule, Nomen, Verben, Adjektive, Pronomen, Wortarten">
+    <meta name="author" content="Grammatik Galaxie">
+    <title>🎓 Antonis Grammatik-Abenteuer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Main App Container -->
+    <div id="app" class="app-container">
+        <!-- Loading Screen -->
+        <div id="loading" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Lade Fragen...</p>
+            </div>
+        </div>
+
+        <!-- Home Screen -->
+        <div id="home-screen" class="screen" style="display: none;">
+            <!-- Header with Score -->
+            <div class="header-card">
+                <div class="header-content">
+                    <div class="header-left">
+                        <img src="antoni-profile.png" alt="Antoni" class="profile-picture">
+                        <div class="title-container">
+                            <div class="app-title">
+                                <span class="icon">📚</span>
+                                <h1>Antonis Grammatik-Abenteuer</h1>
+                            </div>
+                            <p class="subtitle">Übe Grammatik und sammle Punkte, Antoni! 🎯</p>
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <div class="total-points">
+                            <span class="star-icon">⭐</span>
+                            <span id="total-points" class="points-value">0</span>
+                        </div>
+                        <div class="level-badge">
+                            <span id="level-icon">🌱</span>
+                            <span id="level-name">Anfänger</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sound Toggle -->
+            <div class="sound-toggle-card">
+                <span class="sound-label">🔊 Sound-Effekte</span>
+                <button id="sound-toggle" class="toggle-button active">
+                    <span class="toggle-text">An</span>
+                </button>
+            </div>
+
+            <!-- Achievements Display -->
+            <div id="achievements-container" class="achievements-card" style="display: none;">
+                <h3 class="achievements-title">🎉 Erfolge:</h3>
+                <div id="achievements-list" class="achievements-list"></div>
+            </div>
+
+            <!-- Streak Display -->
+            <div id="streak-container" class="streak-card" style="display: none;">
+                <div class="streak-content">
+                    <span class="streak-icon">⚡</span>
+                    <span id="streak-text" class="streak-text">0x Serie! +0 Bonuspunkte</span>
+                    <span class="streak-icon">⚡</span>
+                </div>
+            </div>
+
+            <!-- Category Selection -->
+            <div class="categories-grid">
+                <button class="category-card category-nomen" data-category="nomen">
+                    <div class="category-emoji">🏠</div>
+                    <h3 class="category-title">Nomen</h3>
+                    <p class="category-subtitle">(Namenwörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-verben" data-category="verben">
+                    <div class="category-emoji">🏃</div>
+                    <h3 class="category-title">Verben</h3>
+                    <p class="category-subtitle">(Tunwörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-adjektive" data-category="adjektive">
+                    <div class="category-emoji">🎨</div>
+                    <h3 class="category-title">Adjektive</h3>
+                    <p class="category-subtitle">(Wiewörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-saetze" data-category="saetze">
+                    <div class="category-emoji">📝</div>
+                    <h3 class="category-title">Sätze & Satzzeichen</h3>
+                    <p class="category-subtitle">(Rechtschreibung)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-pronomen" data-category="pronomen">
+                    <div class="category-emoji">👥</div>
+                    <h3 class="category-title">Pronomen</h3>
+                    <p class="category-subtitle">(Fürwörter)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+
+                <button class="category-card category-wortarten" data-category="wortarten">
+                    <div class="category-emoji">🔤</div>
+                    <h3 class="category-title">Wortarten</h3>
+                    <p class="category-subtitle">(Gemischt)</p>
+                    <p class="category-count">50 Fragen</p>
+                </button>
+            </div>
+
+            <!-- Progress Stats -->
+            <div class="stats-card">
+                <h3 class="stats-title">
+                    <span class="trophy-icon">🏆</span>
+                    Deine Fortschritte, Antoni!
+                </h3>
+                <div class="stats-grid">
+                    <div class="stat-item stat-blue">
+                        <div id="correct-answers" class="stat-value">0</div>
+                        <div class="stat-label">Richtige Antworten</div>
+                    </div>
+                    <div class="stat-item stat-purple">
+                        <div id="total-points-stat" class="stat-value">0</div>
+                        <div class="stat-label">Gesamtpunkte</div>
+                    </div>
+                    <div class="stat-item stat-green">
+                        <div id="achievements-count" class="stat-value">0</div>
+                        <div class="stat-label">Erfolge</div>
+                    </div>
+                </div>
+
+                <!-- Replay Button -->
+                <button id="replay-button" class="replay-button">
+                    <span class="sparkle-icon">✨</span>
+                    Neue Übungen starten!
+                    <span class="sparkle-icon">✨</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="question-screen" class="screen" style="display: none;">
+            <!-- Celebration Overlay -->
+            <div id="celebration" class="celebration-overlay" style="display: none;">
+                <div class="celebration-emoji">🎉</div>
+            </div>
+
+            <!-- Progress Header -->
+            <div class="progress-header">
+                <div class="progress-header-top">
+                    <button id="back-button" class="back-button">← Zurück</button>
+                    <div class="progress-header-right">
+                        <button id="sound-toggle-quiz" class="sound-icon-button">
+                            <span id="sound-icon">🔊</span>
+                        </button>
+                        <div class="points-display">
+                            <span class="star-icon-small">⭐</span>
+                            <span id="points-display" class="points-value-small">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div class="progress-text">
+                    Frage <span id="current-question-num">1</span> von <span id="total-questions-num">10</span>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="question-card">
+                <h2 id="question-text" class="question-text"></h2>
+                <div id="options-container" class="options-container"></div>
+            </div>
+
+            <!-- Result Card -->
+            <div id="result-card" class="result-card" style="display: none;">
+                <div class="result-content">
+                    <div id="result-emoji" class="result-emoji">🎉</div>
+                    <h3 id="result-title" class="result-title">Super! Das ist richtig!</h3>
+                    <p id="result-explanation" class="result-explanation"></p>
+                    <div id="result-points" class="result-points"></div>
+                    <button id="next-button" class="next-button">Weiter →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Questions data loaded from JS file (works with file:// protocol) -->
+    <script src="questions-data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
