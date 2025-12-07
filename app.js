@@ -11,7 +11,8 @@ const state = {
     achievements: [],
     soundEnabled: true,
     selectedAnswer: null,
-    showingResult: false
+    showingResult: false,
+    resultTimeout: null
 };
 
 // ===== DOM Elements =====
@@ -136,6 +137,7 @@ function showUnlockToast(levelName) {
 
 
 function initializeApp() {
+    loadStateFromLocalStorage();
     initElements(); // Initialize elements here!
 
     // Show level screen first (if not already playing)
@@ -425,6 +427,10 @@ function updateQuestionScreen() {
     // Update points display
     if (pointsDisplay) pointsDisplay.textContent = state.totalPoints;
 
+    // Sync global header points
+    const globalPoints = document.getElementById('total-points');
+    if (globalPoints) globalPoints.textContent = state.totalPoints;
+
     // Update question text
     if (questionText) {
         questionText.textContent = question.question;
@@ -455,6 +461,11 @@ function updateQuestionScreen() {
 
 function handleAnswer(selectedIndex) {
     if (state.showingResult) return;
+
+    if (state.resultTimeout) {
+        clearTimeout(state.resultTimeout);
+        state.resultTimeout = null;
+    }
 
     const question = state.currentQuestionSet[state.currentQuestionIndex];
     const isCorrect = selectedIndex === question.correctIndex;
@@ -496,6 +507,12 @@ function handleAnswer(selectedIndex) {
         }
 
         saveState(); // Persist unlock status immediately
+
+        // Sync UI immediately
+        const pointsDisplay = document.getElementById('points-display');
+        const globalPoints = document.getElementById('total-points');
+        if (pointsDisplay) pointsDisplay.textContent = state.totalPoints;
+        if (globalPoints) globalPoints.textContent = state.totalPoints;
 
         // Update options appearance - show correct answer
         if (optionsContainer) {
@@ -544,6 +561,9 @@ function handleAnswer(selectedIndex) {
             nextButton.style.display = 'block';
         }
 
+        // SAFETY: Ensure card is visible even if timeout tried to hide it
+        if (resultCard) resultCard.style.display = 'block';
+
     } else {
         // Wrong answer - let user try again
         state.streak = 0;
@@ -583,8 +603,11 @@ function handleAnswer(selectedIndex) {
             if (nextButton) nextButton.style.display = 'none';
 
             // Show result card briefly, then hide it so they can retry
-            setTimeout(() => {
-                resultCard.style.display = 'none';
+            // Show result card briefly, then hide it so they can retry
+            state.resultTimeout = setTimeout(() => {
+                const currentCard = document.getElementById('result-card');
+                if (currentCard) currentCard.style.display = 'none';
+                state.resultTimeout = null;
             }, 2000);
         }
     }
@@ -612,6 +635,7 @@ function checkAchievements() {
     }
 }
 
+
 function goHome() {
     state.currentCategory = null;
     state.currentQuestionIndex = 0;
@@ -623,6 +647,17 @@ function goHome() {
 
     updateHomeScreen();
 }
+
+// Expose functions globally for HTML onclicks
+window.startCategory = startCategory;
+window.selectLevel = selectLevel;
+window.nextQuestion = nextQuestion;
+window.goHome = goHome;
+window.resetProgress = resetProgress;
+window.toggleSound = toggleSound;
+window.replay = replay;
+window.initElements = initElements;
+
 
 function replay() {
     state.currentCategory = null;
@@ -690,15 +725,7 @@ function updateHomeScreen() {
     if (elements.totalPointsStat) elements.totalPointsStat.textContent = state.totalPoints;
     if (elements.achievementsCount) elements.achievementsCount.textContent = state.achievements.length;
 
-    // Update streak display (if element exists)
-    if (elements.streakContainer) {
-        if (state.streak > 0) {
-            elements.streakContainer.style.display = 'flex';
-            if (elements.streakText) elements.streakText.textContent = `${state.streak}x Serie!`;
-        } else {
-            elements.streakContainer.style.display = 'none';
-        }
-    }
+
 
     // Update correct answers count
     if (elements.correctAnswersDisplay) elements.correctAnswersDisplay.textContent = state.score;
@@ -713,4 +740,19 @@ function updateHomeScreen() {
 }
 
 // ===== Start App =====
-init();
+function toggleSettings() {
+    const content = document.getElementById('settings-content');
+    const arrow = document.getElementById('settings-arrow');
+    if (!content) return;
+
+    if (content.style.display === 'none') {
+        content.style.display = '';
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+    } else {
+        content.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+}
+window.toggleSettings = toggleSettings;
+
+document.addEventListener('DOMContentLoaded', initializeApp);

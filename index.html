@@ -88,6 +88,11 @@
         <!-- Category Selection Screen -->
         <div id="category-screen" class="screen" style="display: none;">
 
+            <!-- Category Header with Back Button -->
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 1rem; padding: 0 1rem;">
+                <button class="back-button" onclick="showScreen('level-screen')">← Level wählen</button>
+            </div>
+
             <div class="categories-grid">
                 <button class="category-card category-nomen" data-category="nomen" onclick="startCategory('nomen')">
                     <div class="category-emoji">🏠</div>
@@ -152,22 +157,16 @@
                         <div class="stat-label">Erfolge</div>
                     </div>
                 </div>
-
-                <!-- Streak Display -->
-                <div id="streak-container" class="streak-card" style="display: none; margin-bottom: 0;">
-                    <div class="streak-content">
-                        <span class="streak-icon">⚡</span>
-                        <span id="streak-text" class="streak-text">0x Serie! +0 Bonuspunkte</span>
-                        <span class="streak-icon">⚡</span>
-                    </div>
-                </div>
             </div>
 
             <!-- Settings Section -->
             <div class="settings-section">
-                <h3 class="settings-title">⚙️ Einstellungen</h3>
-                <div class="settings-grid">
-                    <!-- Sound Toggle (Moved here) -->
+                <button class="settings-toggle-btn" onclick="toggleSettings()"
+                    style="width: 100%; background: none; border: none; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0;">
+                    <h3 class="settings-title" style="margin: 0;">⚙️ Einstellungen</h3>
+                    <span id="settings-arrow" style="font-size: 1.2rem; transition: transform 0.3s;">▼</span>
+                </button>
+                <div id="settings-content" class="settings-grid" style="display: none; margin-top: 1rem;">
                     <div class="sound-toggle-card-settings"
                         style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--color-gray-200); padding: var(--spacing-md); border-radius: var(--radius-lg);">
                         <span class="sound-label">🔊 Sound-Effekte</span>
@@ -176,68 +175,60 @@
                         </button>
                     </div>
 
-                    <button id="replay-button" class="replay-button">
-                        <span class="sparkle-icon">✨</span>
-                        Neue Übungen
-                        <span class="sparkle-icon">✨</span>
-                    </button>
-
-                    <button id="reset-button" class="reset-button">
+                    <button id="reset-button" class="reset-button" onclick="resetProgress()">
                         Alles zurücksetzen 🗑️
                     </button>
                 </div>
             </div>
+        </div> <!-- Close category-screen content wrapper -->
+        <!-- Extra div closure removed or consolidated -->
 
-        </div>
-    </div> <!-- Close category-screen content wrapper -->
-    <!-- Extra div closure removed or consolidated -->
+        <!-- Question Screen -->
+        <div id="question-screen" class="screen" style="display: none;">
+            <!-- Celebration Overlay -->
+            <div id="celebration" class="celebration-overlay" style="display: none;">
+                <div class="celebration-emoji">🎉</div>
+            </div>
 
-    <!-- Question Screen -->
-    <div id="question-screen" class="screen" style="display: none;">
-        <!-- Celebration Overlay -->
-        <div id="celebration" class="celebration-overlay" style="display: none;">
-            <div class="celebration-emoji">🎉</div>
-        </div>
-
-        <!-- Progress Header -->
-        <div class="progress-header">
-            <div class="progress-header-top">
-                <button id="back-button" class="back-button">← Zurück</button>
-                <div class="progress-header-right">
-                    <button id="sound-toggle-quiz" class="sound-icon-button">
-                        <span id="sound-icon">🔊</span>
-                    </button>
-                    <div class="points-display">
-                        <span class="star-icon-small">⭐</span>
-                        <span id="points-display" class="points-value-small">0</span>
+            <!-- Progress Header -->
+            <div class="progress-header">
+                <div class="progress-header-top">
+                    <button id="back-button" class="back-button" onclick="goHome()">← Zurück</button>
+                    <div class="progress-header-right">
+                        <button id="sound-toggle-quiz" class="sound-icon-button">
+                            <span id="sound-icon">🔊</span>
+                        </button>
+                        <div class="points-display">
+                            <span class="star-icon-small">⭐</span>
+                            <span id="points-display" class="points-value-small">0</span>
+                        </div>
                     </div>
                 </div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div class="progress-text">
+                    Frage <span id="current-question-num">1</span> von <span id="total-questions-num">10</span>
+                </div>
             </div>
-            <div class="progress-bar-container">
-                <div id="progress-bar" class="progress-bar"></div>
-            </div>
-            <div class="progress-text">
-                Frage <span id="current-question-num">1</span> von <span id="total-questions-num">10</span>
-            </div>
-        </div>
 
-        <!-- Question Card -->
-        <div class="question-card">
-            <h2 id="question-text" class="question-text"></h2>
-            <div id="options-container" class="options-container"></div>
-        </div>
+            <!-- Question Card -->
+            <div class="question-card">
+                <h2 id="question-text" class="question-text"></h2>
+                <div id="options-container" class="options-container"></div>
+            </div>
 
-        <!-- Result Card -->
-        <div id="result-card" class="result-card" style="display: none;">
-            <div class="result-content">
-                <div id="result-emoji" class="result-emoji">🎉</div>
-                <h3 id="result-title" class="result-title">Super! Das ist richtig!</h3>
-                <p id="result-explanation" class="result-explanation"></p>
-                <div id="result-points" class="result-points"></div>
-                <button id="next-button" class="next-button" onclick="nextQuestion()">Weiter →</button>
+            <!-- Result Card -->
+            <div id="result-card" class="result-card" style="display: none;">
+                <div class="result-content">
+                    <div id="result-emoji" class="result-emoji">🎉</div>
+                    <h3 id="result-title" class="result-title">Super! Das ist richtig!</h3>
+                    <p id="result-explanation" class="result-explanation"></p>
+                    <div id="result-points" class="result-points"></div>
+                    <button id="next-button" class="next-button" onclick="nextQuestion()">Weiter →</button>
+                </div>
             </div>
         </div>
-    </div>
     </div>
 
     <!-- Questions data loaded from JS files (works with file:// protocol) -->
