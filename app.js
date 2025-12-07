@@ -132,6 +132,12 @@ function setupEventListeners() {
         elements.backButton.addEventListener('click', goHome);
     }
 
+    // Reset button
+    const resetButton = document.getElementById('reset-button');
+    if (resetButton) {
+        resetButton.addEventListener('click', resetProgress);
+    }
+
     // Sound toggle (quiz)
     if (elements.soundToggleQuiz) {
         elements.soundToggleQuiz.addEventListener('click', toggleSound);
@@ -253,7 +259,7 @@ function startCategory(category) {
             return;
         }
 
-        state.currentQuestionSet = getRandomQuestions(category);
+        state.currentQuestionSet = getRandomQuestions(category, 500);
         if (!state.currentQuestionSet || state.currentQuestionSet.length === 0) {
             console.error("getRandomQuestions returned empty");
             return;
@@ -471,6 +477,13 @@ function replay() {
     // Go to level selection or category? Let's go to level selection for replay to allow change
     showScreen('level-screen');
     updateHomeScreen();
+}
+
+function resetProgress() {
+    if (confirm("⚠️ Wirklich ALLES löschen?\n\nDeine Punkte, Level und Erfolge gehen unwiderruflich verloren!")) {
+        localStorage.removeItem('grammatikGalaxieState');
+        location.reload();
+    }
 }
 
 // ===== Home Screen Updates =====
