@@ -71,22 +71,26 @@ function initializeApp() {
 
 // ===== Level Selection =====
 window.selectLevel = function (level) {
-    state.currentLevel = level;
+    try {
+        state.currentLevel = level;
 
-    // Select questions based on level
-    if (level === 'beginner') {
-        state.allQuestions = window.QUESTIONS_BEGINNER;
-    } else if (level === 'intermediate') {
-        state.allQuestions = window.QUESTIONS_INTERMEDIATE;
-    } else if (level === 'advanced') {
-        state.allQuestions = window.QUESTIONS_ADVANCED;
-    } else {
-        // Fallback to beginner if something is wrong
-        state.allQuestions = window.QUESTIONS_BEGINNER;
+        // Select questions based on level
+        if (level === 'beginner') {
+            state.allQuestions = window.QUESTIONS_BEGINNER;
+        } else if (level === 'intermediate') {
+            state.allQuestions = window.QUESTIONS_INTERMEDIATE || {};
+        } else if (level === 'advanced') {
+            state.allQuestions = window.QUESTIONS_ADVANCED || {};
+        } else {
+            console.warn("Unknown level, defaulting to beginner");
+            state.allQuestions = window.QUESTIONS_BEGINNER;
+        }
+
+        // Show category screen
+        showScreen('category-screen');
+    } catch (e) {
+        console.error("Error in selectLevel:", e);
     }
-
-    // Show category screen
-    showScreen('category-screen');
 };
 
 function showScreen(screenId) {
@@ -227,29 +231,46 @@ function getRandomQuestions(category, count = 10) {
 }
 
 function startCategory(category) {
-    state.currentCategory = category;
+    try {
+        state.currentCategory = category;
 
-    // Ensure questions are loaded
-    if (!state.allQuestions) {
-        state.allQuestions = window.QUESTIONS_BEGINNER;
+        // Ensure questions are loaded
+        if (!state.allQuestions) {
+            console.warn("state.allQuestions was null in startCategory");
+            if (window.QUESTIONS_BEGINNER) {
+                state.allQuestions = window.QUESTIONS_BEGINNER;
+            }
+        }
+
+        // Check if category exists
+        if (!state.allQuestions || !state.allQuestions[category]) {
+            console.error(`Category '${category}' not found`);
+            return;
+        }
+
+        if (state.allQuestions[category].length === 0) {
+            alert("Diese Kategorie ist in diesem Level noch nicht verfügbar! 🚧");
+            return;
+        }
+
+        state.currentQuestionSet = getRandomQuestions(category);
+        if (!state.currentQuestionSet || state.currentQuestionSet.length === 0) {
+            console.error("getRandomQuestions returned empty");
+            return;
+        }
+
+        state.currentQuestionIndex = 0;
+        state.selectedAnswer = null;
+        state.showingResult = false;
+
+        // Switch to question screen
+        showScreen('question-screen');
+
+        // Update UI
+        updateQuestionScreen();
+    } catch (e) {
+        console.error("Error in startCategory:", e);
     }
-
-    // Check if category exists
-    if (!state.allQuestions[category] || state.allQuestions[category].length === 0) {
-        alert("Diese Kategorie ist in diesem Level noch nicht verfügbar! 🚧");
-        return;
-    }
-
-    state.currentQuestionSet = getRandomQuestions(category);
-    state.currentQuestionIndex = 0;
-    state.selectedAnswer = null;
-    state.showingResult = false;
-
-    // Switch to question screen
-    showScreen('question-screen');
-
-    // Update UI
-    updateQuestionScreen();
 }
 
 function nextQuestion() {
@@ -261,6 +282,168 @@ function nextQuestion() {
     } else {
         // Finished all questions, go home
         goHome();
+    }
+}
+
+function updateQuestionScreen() {
+    if (!state.currentQuestionSet || state.currentQuestionSet.length === 0) {
+        console.error("currentQuestionSet is empty!");
+        return;
+    }
+    const question = state.currentQuestionSet[state.currentQuestionIndex];
+
+    // Update progress
+    const progress = ((state.currentQuestionIndex + 1) / state.currentQuestionSet.length) * 100;
+    if (elements.progressBar) elements.progressBar.style.width = `${progress}%`;
+    if (elements.currentQuestionNum) elements.currentQuestionNum.textContent = state.currentQuestionIndex + 1;
+    if (elements.totalQuestionsNum) elements.totalQuestionsNum.textContent = state.currentQuestionSet.length;
+
+    // Update points display
+    if (elements.pointsDisplay) elements.pointsDisplay.textContent = state.totalPoints;
+
+    // Update question text
+    if (elements.questionText) elements.questionText.textContent = question.question;
+
+    // Create option buttons
+    if (elements.optionsContainer) {
+        elements.optionsContainer.innerHTML = '';
+        question.options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.className = 'option-button';
+            button.textContent = option;
+            button.addEventListener('click', () => handleAnswer(index));
+            elements.optionsContainer.appendChild(button);
+        });
+    }
+
+    // Hide result card and show next button
+    if (elements.resultCard) elements.resultCard.style.display = 'none';
+    if (elements.nextButton) elements.nextButton.style.display = 'block';
+    state.showingResult = false;
+}
+
+function handleAnswer(selectedIndex) {
+    if (state.showingResult) return;
+
+    const question = state.currentQuestionSet[state.currentQuestionIndex];
+    const isCorrect = selectedIndex === question.correctIndex;
+
+    // Play sound
+    playSound(isCorrect ? 'correct' : 'wrong');
+
+    // Handle correct/incorrect logic
+    if (isCorrect) {
+        state.selectedAnswer = selectedIndex;
+        state.showingResult = true;
+
+        const points = 10 + (state.streak * 5);
+        state.score++;
+        state.totalPoints += points;
+        state.streak++;
+
+        // Update options appearance - show correct answer
+        const optionButtons = elements.optionsContainer.querySelectorAll('.option-button');
+        optionButtons.forEach((button, index) => {
+            button.disabled = true;
+
+            if (index === question.correctIndex) {
+                button.classList.add('correct');
+                button.textContent += ' ✓';
+            } else {
+                button.classList.add('neutral');
+            }
+        });
+
+        // Show celebration
+        if (elements.celebration) {
+            elements.celebration.style.display = 'flex';
+            setTimeout(() => {
+                elements.celebration.style.display = 'none';
+            }, 1000);
+        }
+
+        // Check for achievements
+        checkAchievements();
+
+        // Show result
+        if (elements.resultCard) {
+            elements.resultCard.className = 'result-card correct';
+            elements.resultEmoji.textContent = '🎉';
+            elements.resultTitle.textContent = 'Super! Das ist richtig!';
+            elements.resultExplanation.textContent = question.explanation;
+            elements.resultPoints.textContent = `+${points} Punkte!${state.streak > 1 ? ` 🔥 ${state.streak}x Serie!` : ''}`;
+
+            // Update next button text and show it
+            if (state.currentQuestionIndex < state.currentQuestionSet.length - 1) {
+                elements.nextButton.textContent = 'Weiter →';
+            } else {
+                elements.nextButton.textContent = 'Fertig! 🎊';
+            }
+            elements.nextButton.style.display = 'block';
+
+            // Show result card
+            elements.resultCard.style.display = 'block';
+        }
+    } else {
+        // Wrong answer - let user try again
+        state.streak = 0;
+
+        // Mark wrong answer as incorrect (but don't show correct answer)
+        const optionButtons = elements.optionsContainer.querySelectorAll('.option-button');
+        optionButtons[selectedIndex].classList.add('incorrect');
+        optionButtons[selectedIndex].textContent += ' ✗';
+        optionButtons[selectedIndex].disabled = true;
+
+        // Random encouraging messages
+        const encouragingMessages = [
+            'Fast, Antoni! Versuch es nochmal! 💪',
+            'Nicht ganz, aber du schaffst das! 🌟',
+            'Probier eine andere Antwort, Antoni! 🎯',
+            'Fast richtig! Welche Antwort könnte es sein? 🤔',
+            'Noch ein Versuch, Antoni! Du bist nah dran! ⭐'
+        ];
+
+        const randomMessage = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
+
+        // Show encouraging message (without showing correct answer)
+        if (elements.resultCard) {
+            elements.resultCard.className = 'result-card incorrect';
+            elements.resultEmoji.textContent = '💡';
+            elements.resultTitle.textContent = randomMessage;
+            elements.resultExplanation.textContent = 'Überlege nochmal in Ruhe...';
+            elements.resultPoints.textContent = '';
+
+            // Hide next button - user must try again
+            elements.nextButton.style.display = 'none';
+
+            // Show result card briefly, then hide it
+            elements.resultCard.style.display = 'block';
+            setTimeout(() => {
+                elements.resultCard.style.display = 'none';
+            }, 2000);
+        }
+    }
+
+    // Save state
+    saveStateToLocalStorage();
+}
+
+function checkAchievements() {
+    const newAchievements = [];
+
+    if (state.streak === 3 && !state.achievements.includes('🔥 3er Serie!')) {
+        newAchievements.push('🔥 3er Serie!');
+    }
+    if (state.streak === 5 && !state.achievements.includes('⚡ 5er Serie!')) {
+        newAchievements.push('⚡ 5er Serie!');
+    }
+    if (state.streak === 10 && !state.achievements.includes('👑 10er Serie!')) {
+        newAchievements.push('👑 10er Serie!');
+    }
+
+    if (newAchievements.length > 0) {
+        state.achievements.push(...newAchievements);
+        saveStateToLocalStorage();
     }
 }
 
