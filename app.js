@@ -12,7 +12,8 @@ const state = {
     soundEnabled: true,
     selectedAnswer: null,
     showingResult: false,
-    resultTimeout: null
+    resultTimeout: null,
+    audioContext: null
 };
 
 // ===== DOM Elements =====
@@ -273,26 +274,38 @@ function updateSoundUI() {
     }
 }
 
+
+
 function playSound(type) {
     if (!state.soundEnabled) return;
 
     try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Init or reuse AudioContext
+        if (!state.audioContext) {
+            state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Mobile browsers require resume() after user interaction
+        if (state.audioContext.state === 'suspended') {
+            state.audioContext.resume();
+        }
+
+        const ctx = state.audioContext;
 
         if (type === 'correct') {
             // Happy success sound: C-E-G chord
             const notes = [523.25, 659.25, 783.99]; // C, E, G in Hz
             notes.forEach((freq, i) => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
 
                 oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+                gainNode.connect(ctx.destination);
 
                 oscillator.frequency.value = freq;
                 oscillator.type = 'sine';
 
-                const startTime = audioContext.currentTime + i * 0.1;
+                const startTime = ctx.currentTime + i * 0.1;
                 gainNode.gain.setValueAtTime(0.3, startTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
 
@@ -301,20 +314,20 @@ function playSound(type) {
             });
         } else {
             // Gentle "try again" sound
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
 
             oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            gainNode.connect(ctx.destination);
 
             oscillator.frequency.value = 200;
             oscillator.type = 'sine';
 
-            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
 
             oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.3);
+            oscillator.stop(ctx.currentTime + 0.3);
         }
     } catch (error) {
         console.warn('Web Audio API nicht verfügbar:', error);
