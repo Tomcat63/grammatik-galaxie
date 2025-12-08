@@ -308,8 +308,9 @@ body {
 /* ===== Categories Grid ===== */
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  /* Reduced gap */
   margin-bottom: var(--spacing-xl);
 }
 
@@ -733,7 +734,8 @@ body {
 /* ===== Responsive Design ===== */
 @media (max-width: 768px) {
   body {
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
+    /* Reduced body padding */
   }
 
   .header-content {
@@ -743,6 +745,15 @@ body {
 
   .header-right {
     text-align: center;
+    width: 100%;
+    /* Ensure full width */
+  }
+
+  .status-pill {
+    flex-wrap: wrap;
+    /* Allow pill content to wrap */
+    justify-content: center;
+    padding: var(--spacing-sm);
   }
 
   .app-title h1 {
@@ -750,14 +761,19 @@ body {
   }
 
   .categories-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
+    grid-template-columns: 1fr;
+    /* Force 1 column on mobile */
+    gap: var(--spacing-md);
+  }
+
+  .category-card {
+    padding: var(--spacing-md);
+    /* Reduce padding inside cards */
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    /* Better wrapping */
   }
 
   .question-text {
@@ -766,6 +782,8 @@ body {
 
   .option-button {
     font-size: 1rem;
+    padding: var(--spacing-md);
+    /* Smaller buttons */
   }
 }
 
